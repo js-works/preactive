@@ -39,8 +39,8 @@ function createConfig(moduleType, environment, cleanup = false, zip = false) {
     },
 
     externals:  environment === 'development'
-      ? ['preact', '@nx-js/observer-util']
-      : ['preact', '@nx-js/observer-util', 'js-spec', 'js-spec/validators'],
+      ? ['preact']
+      : ['preact', 'js-spec', 'js-spec/validators'],
 
     module: {
       rules: [
