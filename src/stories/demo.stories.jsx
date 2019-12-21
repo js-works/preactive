@@ -2,6 +2,7 @@ import { h, createContext } from 'preact'
 
 import {
   statefulComponent,
+  value, observe,
   useContext, useEffect, useInterval, useMemo, useValue, useState
 } from '../main'
 
@@ -14,6 +15,7 @@ export default {
 export const counterDemo1 = () => <CounterDemo1/>
 export const counterDemo2 = () => <CounterDemo2/>
 export const counterDemo3 = () => <CounterDemo3/>
+export const counterDemo4 = () => <CounterDemo4/>
 export const clockDemo = () => <ClockDemo/>
 export const memoDemo = () => <MemoDemo/>
 export const intervalDemo = () => <IntervalDemo/>
@@ -94,6 +96,25 @@ const CounterDemo3 = statefulComponent({
         <button onClick={onIncrement}>{count.value}</button>
       </div>
   }
+})
+
+// === Counter demo 4 ================================================
+
+const CounterDemo4 = statefulComponent('CounterDemo4', () => {
+  const
+    count = value(0),
+    onIncrement = () => ++count.value
+
+  observe(() => {
+    console.log(`Value of counter is now ${count.value}`)
+  })
+
+  return () =>
+    <div>
+      <h3>Counter demo 4:</h3>
+      <label>Counter: </label>
+      <button onClick={onIncrement}>{count.value}</button>
+    </div>
 })
 
 // === Clock demo ====================================================

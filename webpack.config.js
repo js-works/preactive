@@ -15,7 +15,7 @@ const
 
 const configs = []
 
-for (const moduleType of ['cjs', 'umd', 'esm']) {
+for (const moduleType of ['cjs', 'umd' /*, 'esm' */]) { // TODO - esm
   for (const environment of ['development', 'production']) {
     // TODO - this is aweful - fix it
     configs.push(createConfig(moduleType, environment, !configs, !configs))
@@ -32,13 +32,15 @@ function createConfig(moduleType, environment, cleanup = false, zip = false) {
     mode: environment,
 
     output: {
-      library: 'preactive',
+      library: 'jsPreactive',
       libraryTarget:  libraryTargetMap[moduleType],
       path: path.resolve(__dirname, 'dist'),
-      filename: `preactive.${moduleType}.${environment}.js`
+      filename: `js-preactive.${moduleType}.${environment}.js`
     },
 
-    externals: ['preact', 'preact/hooks', 'js-spec', 'js-spec/validators'],
+    externals:  environment === 'development'
+      ? ['preact', '@nx-js/observer-util']
+      : ['preact', '@nx-js/observer-util', 'js-spec', 'js-spec/validators'],
 
     module: {
       rules: [

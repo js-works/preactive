@@ -4,7 +4,6 @@ A R&D project to evaluate an alternative API for developing
 components and hook functions with Preact.<br>
 The main advantages of the new API are:
 
-- 0% magic
 - Does not make any trouble for the garbage collector
 - No rules of hooks
 - No special linter necessary

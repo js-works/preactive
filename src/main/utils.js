@@ -1,3 +1,5 @@
+import { observable, observe } from '@nx-js/observer-util'
+
 // --- asRef ---------------------------------------------------------
 
 export function asRef(arg) {
@@ -33,3 +35,19 @@ export function isMounted(c) {
 export function forceUpdate(c) {
   c.update()
 }
+
+// --- object --------------------------------------------------------
+
+export function object(initialState) {
+  return observable(initialState)
+}
+
+// --- value ---------------------------------------------------------
+
+export function value(initialValue) {
+  return observable({ value: initialValue })
+}
+
+// --- observe -------------------------------------------------------
+
+export { observe }

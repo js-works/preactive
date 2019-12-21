@@ -1,4 +1,5 @@
 import { Component } from 'preact'
+import { observe } from '@nx-js/observer-util'
 import * as Spec from 'js-spec/validators'
 
 // Brrrr, this is horrible as hell - please fix asap!!!!
@@ -52,15 +53,15 @@ export function statelessComponent(arg1, arg2) {
       throw new TypeError(
         '[statelessComponent] Error: '
           + (displayName ? `${displayName} ` : '')
-          + errorMessage)
+          + errorMsg)
     }
   }
 
   let ret = config.defaultProps
-    ? props => config.render(Object.assign({}, defaultProps, props)) // TODO - optimize
+    ? props => config.render(Object.assign({}, config.defaultProps, props)) // TODO - optimize
     : config.render.bind(null)
 
-  ret.displayName = displayName
+  ret.displayName = config.displayName
 
   if (config.memoize === true) {
     // TODO - `memo` is only available in "preact/compat"
@@ -201,7 +202,24 @@ export function statefulComponent(arg1, arg2) {
       }
 
       beforeUpdateNotifier.notify()
-      return render(props)
+
+      let content
+
+      // TODO!!!!!!!!!!!!!!!!!!!!!
+      // This implementation is surely not working properly in general
+      if (mounted) {
+        content = render(props)
+      } else {
+        observe(() => {
+          content = render(props)
+
+          if (mounted) {
+            this.forceUpdate()
+          }
+        })
+      }
+
+      return content
     }
   }
 
