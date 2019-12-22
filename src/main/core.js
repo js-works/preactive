@@ -134,11 +134,17 @@ export function statefulComponent(arg1, arg2) {
       //beforeUpdateNotifier = createNotifier(),
       afterUpdateNotifier = createNotifier(),
       beforeUnmountNotifier = createNotifier(),
-      //runOnceBeforeUpdateTasks = [],
+      runOnceBeforeUpdateTasks = [],
 
       ctrl = {
         isMounted: () => mounted,
-        update: () => this.forceUpdate(),
+        update: runOnceBeforeUpdate => {
+          if (runOnceBeforeUpdate) {
+            runOnceBeforeUpdateTasks.push(runOnceBeforeUpdate)
+          }
+
+          this.forceUpdate()
+        },
 
         getContextValue: ctx => {
           const provider = this.context[ctx[keyContextId]]
@@ -189,9 +195,6 @@ export function statefulComponent(arg1, arg2) {
         }
       }
 
-      return render(props)
-
-      /*
       const taskCount = runOnceBeforeUpdateTasks.length
 
       for (let i = 0; i < taskCount; ++i) {
@@ -203,6 +206,10 @@ export function statefulComponent(arg1, arg2) {
       } else {
         runOnceBeforeUpdateTasks.splice(0, taskCount)
       }
+
+      return render(props)
+
+      /*
 
       beforeUpdateNotifier.notify()
       */

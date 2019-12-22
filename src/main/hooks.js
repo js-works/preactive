@@ -1,48 +1,78 @@
-import ObservableSlim from 'observable-slim'
+//import ObservableSlim from 'observable-slim'
+import onChange from 'on-change'
 import { asRef } from './utils'
 
 // --- useValue ------------------------------------------------------
-
 export function useValue(c, initialValue) {
-  let value = initialValue
-
-  return {
-    get value() {
-      return value
+  let currValue = initialValue
+  
+  const
+    value = {
+      get() {
+        return currValue
+      }
     },
 
-    setValue(newValue) {
-      value = newValue
-      c.forceUpdate()
+    setValue = updater => {
+      c.update(() =>
+        currValue = typeof updater === 'function'
+          ? updater(currValue)
+          : updater)
     }
-  }
+
+  return [value, setValue]
 }
 
 // --- useState ------------------------------------------------------
 
 export function useState(c, initialState) {
-  return ObservableSlim.create(initialState, true, () => c.update())
-
-  /* with just shallow change detection
-  let ret = {}
+  let state = {}
   
   const
     data = Object.assign({}, initialState),
     keys = Object.keys(initialState)
 
   Object.keys(initialState).forEach(key => {
-    Object.defineProperty(ret, keys, {
+    Object.defineProperty(state, keys, {
       enumerable: true,
-      get: () => data[key],
-      set: value => {
-        c.update()
-        data[key] = value
-      }
+      get: () => data[key]
     })
   })
 
-  return ret
-  */
+  const setState = (arg1, arg2) => {
+    let updater
+
+    if (typeof arg1 !== 'string') {
+      updater = arg1
+    } else if (typeof arg2 !== 'function') {
+      updater = { [arg1]: arg2 }
+    } else {
+      updater = state => ({
+        [arg1]: arg2(state[arg1])
+      })
+    } 
+
+    c.update(() => {
+      Object.assign(data, typeof updater === 'function'
+        ? updater(state)
+        : updater
+      )
+    })
+  }
+  
+  return [state, setState]
+}
+
+// --- useObsValue ----------------------------------------------
+
+export function useObsValue(c, initialValue) {
+  return useObsState(c, { value: initialValue })
+}
+
+// --- useObsState ---------------------------------------------------
+
+export function useObsState(c, initialState) {
+  return onChange(initialState, () => c.update())
 }
 
 // --- useMemo -------------------------------------------------------

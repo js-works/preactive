@@ -111,12 +111,12 @@ function renderHelloWorld(props) {
 
 ```jsx
 import { h, render } from 'preact'
-import { statefulComponent, useValue } from 'js-preactive'
+import { statefulComponent, useState } from 'js-preactive'
 
 const Counter = statefulComponent('Counter', (c, props) => {
   const
-    state = useState(c, { count: props.initialValue || 0 }),
-    onIncrement = () => state.count++
+    [state, setState] = useState(c, { count: props.initialValue || 0 }),
+    onIncrement = () => setState('count', it => it + 1)
 
   return () =>
     <div>
@@ -144,8 +144,8 @@ const Counter = statefulComponent({
   }
 }, (c, props) => {
   const
-    state = useState(c, { count: props.initialValue }),
-    onIncrement = () => state.count++
+    [state, setState] = useState(c, { count: props.initialValue || 0 }),
+    onIncrement = () => setState('count', it => it + 1)
 
   return () =>
     <div>
@@ -161,7 +161,7 @@ render(<Counter/>, document.getElementById('app'))
 
 ```jsx
 import { h, render } from 'preact'
-import { statefulComponent, useValue } from 'js-preactive'
+import { statefulComponent, useState } from 'js-preactive'
 
 const Counter = statefulComponent({
   displayName: 'Counter',
@@ -177,8 +177,8 @@ const Counter = statefulComponent({
 
 function initCounter(c, props) {
   const
-    state = useState(c, { count: props.initialValue }),
-    onIncrement = () => state.count++
+    [state, setState] = useState(c, { count: props.initialValue || 0 }),
+    onIncrement = () => setState('count', it => it + 1)
 
   return () =>
     <div>
@@ -199,7 +199,7 @@ hook and utility functions):
 
 ```typescript
 type Ctrl = {
-  update(): void,
+  update(runOnceBeforeRender?): void,
   isMounted(): boolean,
   getContextValue<T>(Context<T>): T,
   afterMount(subscriber: Subscriber): void,

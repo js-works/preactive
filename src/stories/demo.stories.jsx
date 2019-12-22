@@ -2,7 +2,9 @@ import { h, createContext } from 'preact'
 
 import {
   statefulComponent,
-  useState, useMemo, useContext, useEffect, useInterval
+  useContext, useEffect, useInterval, useMemo,
+  useObsState, useObsValue,
+  useState
 } from '../main'
 
 import { toRef } from '../main/utils'
@@ -23,9 +25,10 @@ export const contextDemo = () => <ContextDemo/>
 
 const CounterDemo1 = statefulComponent('CounterDemo1', (c, props) => {
   const
-    state = useState(c, { count: props.initialValue || 0 }),
-    onIncrement = () => state.count++,
-    onInput = ev => state.count = ev.currentTarget.valueAsNumber
+    //state = useObsState(c, { count: props.initialValue || 0 }),
+    [state, setState] = useState(c, { count: props.initialValue || 0 }),
+    onIncrement = () => setState('count', it => it + 1),
+    onInput = ev => setState('count', ev.currentTarget.valueAsNumber)
 
   useEffect(c, () => {
     console.log(`Value of "${props.label}" is now ${state.count}`)
@@ -51,7 +54,7 @@ const CounterDemo2 = statefulComponent({
   }
 }, (c, props) => {
   const
-    state = useState(c, { count: props.initialValue }),
+    state = useObsState(c, { count: props.initialValue }),
     onIncrement = () => state.count++,
     onInput = ev => state.count = ev.currentTarget.valueAsNumber
 
@@ -79,7 +82,7 @@ const CounterDemo3 = statefulComponent({
   },
   init: (c, props) => {
     const
-      state = useState(c, { count: props.initialValue }),
+      state = useObsState(c, { count: props.initialValue }),
       onIncrement = () => state.count++,
       onInput = ev => state.count = ev.currentTarget.valueAsNumber
 
@@ -113,7 +116,7 @@ function getTime() {
 }
 
 function useTime(c) {
-  const time = useState(c, { value: getTime() })
+  const time = useObsValue(c, getTime())
 
   useInterval(c, () => {
     time.value = getTime()
@@ -126,7 +129,7 @@ function useTime(c) {
 
 const MemoDemo = statefulComponent('MemoDemo', c => {
   const
-    state = useState(c, { count: 0 }),
+    state = useObsState(c, { count: 0 }),
     onButtonClick = () => state.count++,
 
     memo = useMemo(c,
@@ -150,7 +153,7 @@ const MemoDemo = statefulComponent('MemoDemo', c => {
 
 const IntervalDemo = statefulComponent('IntervalDemo', c => {
   const
-    state = useState(c, {
+    state = useObsState(c, {
       count: 0,
       delay: 1000
     }),
@@ -197,7 +200,7 @@ const LocaleCtx = createContext('en')
 
 const ContextDemo = statefulComponent('ContextDemo', c => {
   const
-    state = useState(c, { locale: 'en' }),
+    state = useObsState(c, { locale: 'en' }),
     onLocaleChange = ev =>state.locale = ev.target.value
 
   return () => (

@@ -1,6 +1,6 @@
 {
   "name": "js-preactive",
-  "version": "0.0.11",
+  "version": "0.0.13",
   "description": "",
   "main": "index.js",
   "TODO!!!!!!!module": "dist/js-preactive.esm.producion.js",
@@ -43,6 +43,7 @@
     "eslint-plugin-react": "^7.17.0",
     "js-spec": "^0.1.78",
     "observable-slim": "^0.1.5",
+    "on-change": "^1.6.2",
     "terser-webpack-plugin": "^2.2.1",
     "uglifyjs-webpack-plugin": "^2.2.0",
     "webpack": "^4.41.2",
