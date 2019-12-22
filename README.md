@@ -144,7 +144,7 @@ const Counter = statefulComponent({
   }
 }, (c, props) => {
   const
-    [state, setState] = useState(c, { count: props.initialValue || 0 }),
+    [state, setState] = useState(c, { count: props.initialValue }),
     onIncrement = () => setState('count', it => it + 1)
 
   return () =>
@@ -177,7 +177,7 @@ const Counter = statefulComponent({
 
 function initCounter(c, props) {
   const
-    [state, setState] = useState(c, { count: props.initialValue || 0 }),
+    [state, setState] = useState(c, { count: props.initialValue }),
     onIncrement = () => setState('count', it => it + 1)
 
   return () =>
