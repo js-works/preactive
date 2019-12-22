@@ -234,7 +234,6 @@ type Context<T> = Preact.Context<T>
 
 - `useState(c, initialState)`
 - `useValue(c, initialValue)`
-- `useState(c, initialStateObject)`
 - `useMemo(c, calculation, () => dependencies)`
 - `useContext(c, context)`
 - `useEffect(c, action, () => dependencies)`
