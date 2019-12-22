@@ -1,62 +1,83 @@
-// --- useState ------------------------------------------------------
-
-export function useState(c, initialState) {
-  const
-    state = Object.assign({}, initialState),
-
-    setState = (arg1, arg2) => {
-      let updater
-
-      if (typeof arg1 !== 'string') {
-        updater = arg1
-      } else if (typeof arg2 !== 'function') {
-        updater = { [arg1]: arg2 }
-      } else {
-        updater = state => ({
-          [arg1]: arg2(state[arg1])
-        })
-      } 
-
-      c.runOnceBeforeUpdate(() => {
-        Object.assign(state, typeof updater === 'function'
-          ? updater(state)
-          : updater
-        )
-      })
-
-      c.update()
-    }
-
-  return [state, setState]
-}
+import ObservableSlim from 'observable-slim'
+import { asRef } from './utils'
 
 // --- useValue ------------------------------------------------------
 
 export function useValue(c, initialValue) {
-  const
-    value = { value: initialValue },
+  let value = initialValue
 
-    setValue = updater => {
-      c.runOnceBeforeUpdate(() => {
-        value.value = typeof updater === 'function'
-          ? updater(value.value)
-          : updater
-      })
+  return {
+    get value() {
+      return value
+    },
 
-      c.update()
+    setValue(newValue) {
+      value = newValue
+      c.forceUpdate()
     }
+  }
+}
 
-  return [value, setValue]
+// --- useState ------------------------------------------------------
+
+export function useState(c, initialState) {
+  return ObservableSlim.create(initialState, true, () => c.update())
+
+  /* with just shallow change detection
+  let ret = {}
+  
+  const
+    data = Object.assign({}, initialState),
+    keys = Object.keys(initialState)
+
+  Object.keys(initialState).forEach(key => {
+    Object.defineProperty(ret, keys, {
+      enumerable: true,
+      get: () => data[key],
+      set: value => {
+        c.update()
+        data[key] = value
+      }
+    })
+  })
+
+  return ret
+  */
+}
+
+// --- useMemo -------------------------------------------------------
+
+// TODO - this is not really optimized, is it?
+
+export function useMemo(c, getValue, getDeps) {
+  let oldDeps, value
+
+  const memo = {
+    get value() {
+      const newDeps = getDeps()
+
+      if (!oldDeps || !isEqualArray(oldDeps, newDeps)) {
+        value = getValue.call(null, newDeps)
+      }
+
+      oldDeps = newDeps
+      return value
+    }
+  }
+
+  return memo
 }
 
 // --- useContext ----------------------------------------------------
 
 export function useContext(c, context) {
-  const ret = { value: undefined }
 
-  c.beforeUpdate(() => {
-     ret.value = c.getContextValue(context)
-  })
+
+  return {
+    get value() {
+      return c.getContextValue(context) 
+    }
+  }
 
   return ret
 }
@@ -110,25 +131,6 @@ export function useInterval(c, callback, delay) {
   }, () => [callbackRef.current, delayRef.current])
 }
 
-// --- useMemo -------------------------------------------------------
-
-export function useMemo(c, getValue, getDeps) {
-  let oldDeps = getDeps()
-
-  const memo = { value: getValue.apply(null, oldDeps) }
-
-  c.beforeUpdate(() => {
-    const newDeps = getDeps()
-
-    if (!isEqualArray(oldDeps, newDeps)) {
-      oldDeps = newDeps
-      memo.value = getValue.apply(null, newDeps)
-    }
-  })
-
-  return memo
-}
-
 // --- locals --------------------------------------------------------
 
 function isEqualArray(arr1, arr2) {
@@ -144,10 +146,4 @@ function isEqualArray(arr1, arr2) {
   }
 
   return ret
-}
-
-function asRef(arg) {
-  return arg && Object.prototype.hasOwnProperty.call(arg, 'current')
-    ? arg
-    : { current: arg }
 }

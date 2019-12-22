@@ -1,5 +1,5 @@
 import { Component } from 'preact'
-import { observe } from '@nx-js/observer-util'
+//import { observe } from '@nx-js/observer-util'
 import * as Spec from 'js-spec/validators'
 
 // Brrrr, this is horrible as hell - please fix asap!!!!
@@ -131,10 +131,10 @@ export function statefulComponent(arg1, arg2) {
         !needsPropObject ? null : Object.assign({}, config.defaultProps, props),
 
       afterMountNotifier = createNotifier(),
-      beforeUpdateNotifier = createNotifier(),
+      //beforeUpdateNotifier = createNotifier(),
       afterUpdateNotifier = createNotifier(),
       beforeUnmountNotifier = createNotifier(),
-      runOnceBeforeUpdateTasks = [],
+      //runOnceBeforeUpdateTasks = [],
 
       ctrl = {
         isMounted: () => mounted,
@@ -147,11 +147,11 @@ export function statefulComponent(arg1, arg2) {
         },
 
         afterMount: afterMountNotifier.subscribe,
-        beforeUpdate: beforeUpdateNotifier.subscribe,
+        //beforeUpdate: beforeUpdateNotifier.subscribe,
         afterUpdate: afterUpdateNotifier.subscribe,
         beforeUnmount: beforeUnmountNotifier.subscribe,
 
-        runOnceBeforeUpdate: task => runOnceBeforeUpdateTasks.push(task)
+        //runOnceBeforeUpdate: task => runOnceBeforeUpdateTasks.push(task)
       },
 
       render = config.init(ctrl, propsObject)
@@ -189,6 +189,9 @@ export function statefulComponent(arg1, arg2) {
         }
       }
 
+      return render(props)
+
+      /*
       const taskCount = runOnceBeforeUpdateTasks.length
 
       for (let i = 0; i < taskCount; ++i) {
@@ -202,7 +205,9 @@ export function statefulComponent(arg1, arg2) {
       }
 
       beforeUpdateNotifier.notify()
+      */
 
+      /*
       let content
 
       // TODO!!!!!!!!!!!!!!!!!!!!!
@@ -220,6 +225,7 @@ export function statefulComponent(arg1, arg2) {
       }
 
       return content
+      */
     }
   }
 

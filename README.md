@@ -115,13 +115,13 @@ import { statefulComponent, useValue } from 'js-preactive'
 
 const Counter = statefulComponent('Counter', (c, props) => {
   const
-    [count, setCount] = useValue(c, props.initialValue || 0),
-    onIncrement = () => setCount(it => it + 1)
+    state = useState(c, { count: props.initialValue || 0 }),
+    onIncrement = () => state.count++
 
   return () =>
     <div>
       <label>{props.label || 'Counter'}: </label>
-      <button onClick={onIncrement}>{count.value}</button>
+      <button onClick={onIncrement}>{state.count}</button>
     </div>
 })
 
@@ -132,7 +132,7 @@ render(<Counter/>, document.getElementById('app'))
 
 ```jsx
 import { h, render } from 'preact'
-import { statefulComponent, useValue } from 'js-preactive'
+import { statefulComponent, useState } from 'js-preactive'
 
 const Counter = statefulComponent({
   displayName: 'Counter',
@@ -144,13 +144,13 @@ const Counter = statefulComponent({
   }
 }, (c, props) => {
   const
-    [count, setCount] = useValue(c, props.initialValue),
-    onIncrement = () => setCount(it => it + 1)
+    state = useState(c, { count: props.initialValue }),
+    onIncrement = () => state.count++
 
   return () =>
     <div>
       <label>{props.label}: </label>
-      <button onClick={onIncrement}>{count.value}</button>
+      <button onClick={onIncrement}>{state.count}</button>
     </div>
 })
 
@@ -177,13 +177,13 @@ const Counter = statefulComponent({
 
 function initCounter(c, props) {
   const
-    [count, setCount] = useValue(c, props.initialValue),
-    onIncrement = () => setCount(it => it + 1)
+    state = useState(c, { count: props.initialValue }),
+    onIncrement = () => state.count++
 
   return () =>
     <div>
       <label>{props.label}: </label>
-      <button onClick={onIncrement}>{count.value}</button>
+      <button onClick={onIncrement}>{state.count}</button>
     </div>
 })
 
@@ -199,19 +199,16 @@ hook and utility functions):
 
 ```typescript
 type Ctrl = {
-  isMounted(): boolean,
   update(): void,
+  isMounted(): boolean,
   getContextValue<T>(Context<T>): T,
   afterMount(subscriber: Subscriber): void,
-  beforeUpdate(subscriber: Subscriber): void,
   afterUpdate(subscriber: Subscriber): void,
   beforeUnmount(subscriber: Subscriber): void,
-  runOnceBeforeUpdate(task: Task): void
 }
 
 type Props = Record<string, any>
 type Subscriber = () => void
-type Task = () => void
 type Context<T> = Preact.Context<T>
 ```
 
@@ -235,6 +232,7 @@ type Context<T> = Preact.Context<T>
 
 ### Hooks
 
+- `useState(c, initialState)`
 - `useValue(c, initialValue)`
 - `useState(c, initialStateObject)`
 - `useMemo(c, calculation, () => dependencies)`
