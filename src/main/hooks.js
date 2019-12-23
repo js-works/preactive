@@ -33,7 +33,7 @@ export function useState(c, initialState) {
     keys = Object.keys(initialState)
 
   Object.keys(initialState).forEach(key => {
-    Object.defineProperty(state, keys, {
+    Object.defineProperty(state, key, {
       enumerable: true,
       get: () => data[key]
     })
