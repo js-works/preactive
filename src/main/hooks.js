@@ -8,7 +8,7 @@ export function useValue(c, initialValue) {
   
   const
     value = {
-      get() {
+      get value() {
         return currValue
       }
     },

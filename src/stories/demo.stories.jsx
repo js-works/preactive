@@ -2,7 +2,7 @@ import { h, createContext } from 'preact'
 
 import {
   statefulComponent,
-  useContext, useEffect, useInterval, useMemo,
+  useContext, useEffect, useInterval, useMemo, useValue,
   useObsState, useObsValue,
   useState
 } from '../main'
@@ -26,19 +26,19 @@ export const contextDemo = () => <ContextDemo/>
 const CounterDemo1 = statefulComponent('CounterDemo1', (c, props) => {
   const
     //state = useObsState(c, { count: props.initialValue || 0 }),
-    [state, setState] = useState(c, { count: props.initialValue || 0 }),
-    onIncrement = () => setState('count', it => it + 1),
-    onInput = ev => setState('count', ev.currentTarget.valueAsNumber)
+    [count, setCount] = useValue(c, props.initialValue || 0),
+    onIncrement = () => setCount(it => it + 1),
+    onInput = ev => setCount(ev.currentTarget.valueAsNumber)
 
   useEffect(c, () => {
-    console.log(`Value of "${props.label}" is now ${state.count}`)
-  }, () => [state.count])
+    console.log(`Value of "${props.label}" is now ${count.value}`)
+  }, () => [count.value])
 
   return () =>
     <div>
       <h3>Counter demo 1:</h3>
-      <input type="number" value={state.count} onInput={onInput} />
-      <button onClick={onIncrement}>{state.count}</button>
+      <input type="number" value={count.value} onInput={onInput} />
+      <button onClick={onIncrement}>{count.value}</button>
     </div>
 })
 

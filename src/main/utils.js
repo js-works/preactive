@@ -33,3 +33,15 @@ export function isMounted(c) {
 export function forceUpdate(c) {
   c.update()
 }
+
+// --- getContextValue -----------------------------------------------
+
+export function getContextValue(c, ctx, defaultValue) {
+  let ret = c.getContextValue(ctx)
+
+  if (ret === undefined) {
+    ret = defaultValue
+  }
+
+  return ret
+}

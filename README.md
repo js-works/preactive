@@ -4,6 +4,7 @@ A R&D project to evaluate an alternative API for developing
 components and hook functions with Preact.<br>
 The main advantages of the new API are:
 
+- 0% magic
 - Does not make any trouble for the garbage collector
 - No rules of hooks
 - No special linter necessary
@@ -199,7 +200,7 @@ hook and utility functions):
 
 ```typescript
 type Ctrl = {
-  update(runOnceBeforeRender?): void,
+  update(runOnceBeforeRender?: () => void): void,
   isMounted(): boolean,
   getContextValue<T>(Context<T>): T,
   afterMount(subscriber: Subscriber): void,
@@ -227,6 +228,7 @@ type Context<T> = Preact.Context<T>
 
 - `isMounted(c)`
 - `forceUpdate(c)`
+- `getContextValue(c, context, defaultValue?)`
 - `asRef(valueOrRef)`
 - `toRef(getter)`
 
