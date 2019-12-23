@@ -55,7 +55,7 @@ const HelloWorld = statelessComponent('HelloWorld', ({
 }) => {
   return (
     <div>
-      {props.salutation}, {props.name}
+      {salutation}, {name}
     </div>
   )
 })
@@ -202,7 +202,7 @@ hook and utility functions):
 type Ctrl = {
   update(runOnceBeforeRender?: () => void): void,
   isMounted(): boolean,
-  getContextValue<T>(Context<T>): T,
+  getContextValue<T>(context: Context<T>): T,
   afterMount(subscriber: Subscriber): void,
   afterUpdate(subscriber: Subscriber): void,
   beforeUnmount(subscriber: Subscriber): void,
