@@ -1,7 +1,7 @@
 import { h, createContext } from 'preact'
 
 import {
-  statefulComponent,
+  statefulComponent, componentStore,
   useContext, useEffect, useInterval, useMemo, useValue,
   useObsState, useObsValue,
   useState
@@ -16,6 +16,7 @@ export default {
 export const counterDemo1 = () => <CounterDemo1/>
 export const counterDemo2 = () => <CounterDemo2/>
 export const counterDemo3 = () => <CounterDemo3/>
+export const counterDemo4 = () => <CounterDemo4/>
 export const clockDemo = () => <ClockDemo/>
 export const memoDemo = () => <MemoDemo/>
 export const intervalDemo = () => <IntervalDemo/>
@@ -95,6 +96,47 @@ const CounterDemo3 = statefulComponent({
         <h3>Counter demo 3:</h3>
         <input type="number" value={state.count} onInput={onInput} />
         <button onClick={onIncrement}>{state.count}</button>
+      </div>
+  }
+})
+
+// === Counter demo 4 ================================================
+
+function initCounterStore(initialValue = 0) {
+  return { count: initialValue }
+}
+
+const useCounterStore = componentStore(setState => ({
+  getCount: state => state.count,
+  
+  increment: (state, delta = 1) => {
+    setState('count', it => it + delta)
+  }
+}), initCounterStore)
+
+const CounterDemo4 = statefulComponent({
+  displayName: 'CounterDemo4',
+  memoize: true,
+
+  defaultProps: {
+    initialValue: 0,
+    label: 'Counter'
+  },
+  init: (c, props) => {
+    const
+      store = useCounterStore(c, props.initialValue),
+      onIncrement = () => store.increment(),
+      onInput = ev => state.count = ev.currentTarget.valueAsNumber
+
+    useEffect(c, () => {
+      console.log(`Value of "${props.label}" is now ${store.getCount()}`)
+    }, () => [store.getCount()])
+
+    return () =>
+      <div>
+        <h3>Counter demo 4:</h3>
+        <input type="number" value={store.getCount()} onInput={onInput} />
+        <button onClick={onIncrement}>{store.getCount()}</button>
       </div>
   }
 })
