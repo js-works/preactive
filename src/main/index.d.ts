@@ -7,6 +7,7 @@ export {
     Props,
     VirtualElement,
     VirtualNode,
+    Context,
     Ref,
     R,
 

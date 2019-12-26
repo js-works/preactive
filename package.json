@@ -1,6 +1,6 @@
 {
   "name": "js-preactive",
-  "version": "0.0.16",
+  "version": "0.0.20",
   "description": "",
   "main": "index.js",
   "TODO!!!!!!!module": "dist/js-preactive.esm.producion.js",
