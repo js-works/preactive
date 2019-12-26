@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "TODO!!!!!!!module": "dist/js-preactive.esm.producion.js",
+  "types": "./src/main/index.d.ts",
   "unpkg": "dist/js-preactive.umd.production.js",
   "files": [
     "index.js",
