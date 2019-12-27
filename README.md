@@ -116,7 +116,7 @@ import { statefulComponent, useState } from 'js-preactive'
 
 const Counter = statefulComponent('Counter', (c, props) => {
   const
-    [state, setState] = useState(c, { count: props.initialValue || 0 }),
+    [state, setState] = useState(c, { count: props.initialCount || 0 }),
     onIncrement = () => setState('count', it => it + 1)
 
   return () =>
@@ -140,12 +140,12 @@ const Counter = statefulComponent({
   memoize: true,
   
   defaultProps: {
-    initialValue: 0,
+    initialCount: 0,
     label: 'Counter'
   }
 }, (c, props) => {
   const
-    [state, setState] = useState(c, { count: props.initialValue }),
+    [state, setState] = useState(c, { count: props.initialCount }),
     onIncrement = () => setState('count', it => it + 1)
 
   return () =>
@@ -169,7 +169,7 @@ const Counter = statefulComponent({
   memoize: true,
   
   defaultProps: {
-    initialValue: 0,
+    initialCount: 0,
     label: 'Counter'
   },
 
@@ -178,7 +178,7 @@ const Counter = statefulComponent({
 
 function initCounter(c, props) {
   const
-    [state, setState] = useState(c, { count: props.initialValue }),
+    [state, setState] = useState(c, { count: props.initialCount }),
     onIncrement = () => setState('count', it => it + 1)
 
   return () =>
@@ -213,6 +213,53 @@ type Subscriber = () => void
 type Context<T> = Preact.Context<T>
 ```
 
+## Additional example - showing some more features
+
+```jsx
+import { h, render } from 'preact'
+import { statefulComponent, useEffect, useValue } from 'js-preactive'
+import * as Spec from 'js-spec/validators' // 3rd party validation library
+
+const Counter = statefulComponent({
+  displayName: 'Counter',
+  memoize: true,
+
+  validate: Spec.checkProps({
+    optional: {
+      initialCount: Spec.integer,
+      label: Spec.string
+    }
+  }),
+
+  defaultProps: {
+    initialCount: 0,
+    label: 'Counter'
+  }
+}, (c, props) => {
+  const
+    [count, setCount] = useValue(c, props.initialValue),
+    onIncrement = () => setCount(it => it + 1)
+
+  useEffect(() => {
+    console.log(`"${props.label}" has been mounted`)
+
+    return () => console.log(`Unmounting "${props.label}"`)
+  }, null)
+
+  useEffect(() => {
+    console.log(`Value of "${props.label}": ${count.value}`)
+  }, () => [count.value])
+
+  return () =>
+    <div>
+      <label>{props.label}: </label>
+      <button onClick={onIncrement}>{count.value}</button>
+    </div>
+})
+
+render(<Counter/>, document.getElementById('app'))
+```
+
 ## API
 
 ### Component definition
@@ -235,7 +282,7 @@ type Context<T> = Preact.Context<T>
 ### Hooks
 
 - `useState(c, initialState)`
-- `useValue(c, initialValue)`
+- `useValue(c, initialCount)`
 - `useMemo(c, calculation, () => dependencies)`
 - `useContext(c, context)`
 - `useEffect(c, action, () => dependencies)`
