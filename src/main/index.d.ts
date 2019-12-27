@@ -40,14 +40,18 @@ type Component<P extends Props> = ComponentType<P>
 type Ref<T> = { current: T }
 type R<T> = T | Ref<T>
 
-type SLComponentConfig<P extends Props, D extends Partial<P> = {}> = {
+type PickOptionalProps<T> = Partial<Pick<T, {
+    [K in keyof T]-?: T extends Record<K, T[K]> ? never : K
+}[keyof T]>>
+
+type SLComponentConfig<P extends Props, D extends PickOptionalProps<P> = {}> = {
   displayName: string,
   memoized?: boolean,
   validate?: (props: P) => boolean | null | Error,
   render(props: P & D): VirtualNode
 }
 
-type SFComponentConfig<P extends Props, D extends Partial<P> = {}> = {
+type SFComponentConfig<P extends Props, D extends PickOptionalProps<P> = {}> = {
   displayName: string,
   memoize?: boolean,
   validate?: (props: P) => boolean | null | Error
@@ -65,14 +69,14 @@ type Ctrl = {
 
 declare function statelessComponent<
   P extends Props,
-  D extends Partial<P>
+  D extends PickOptionalProps<P>
 >(
   config: SLComponentConfig<P, D>
 ): Component<P>
 
 declare function statelessComponent<
   P extends Props,
-  D extends Partial<P>
+  D extends PickOptionalProps<P>
 >(
   displayName: string,
   render: (props: P & D) => VirtualNode
@@ -80,7 +84,7 @@ declare function statelessComponent<
 
 declare function statelessComponent<
   P extends Props,
-  D extends Partial<P>
+  D extends PickOptionalProps<P>
 >(
   config: Omit<SLComponentConfig<P>, 'render'>,
   render: (props: P & D) => VirtualNode
@@ -88,14 +92,14 @@ declare function statelessComponent<
 
 declare function statefulComponent<
   P extends Props,
-  D extends Partial<P>
+  D extends PickOptionalProps<P>
 >(
   config: SFComponentConfig<P, D>
 ): Component<P>
 
 declare function statefulComponent<
   P extends Props,
-  D extends Partial<P>
+  D extends PickOptionalProps<P>
 >(
   displayName: string,
   init: (c: Ctrl, props: P & D) => VirtualNode
@@ -103,7 +107,7 @@ declare function statefulComponent<
 
 declare function statefulComponent<
   P extends Props,
-  D extends Partial<P>
+  D extends PickOptionalProps<P>
 >(
   config: Omit<SFComponentConfig<P>, 'init'>,
   init: (c: Ctrl, props: P & D) => VirtualNode

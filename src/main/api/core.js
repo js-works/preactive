@@ -1,4 +1,4 @@
-import { Component } from 'preact'
+import { Component, options } from 'preact'
 //import { observe } from '@nx-js/observer-util'
 import * as Spec from 'js-spec/validators'
 
@@ -7,6 +7,37 @@ const
   isMinimized = Component.name !== 'Component',
   keyContextId = isMinimized ? '__c' : '_id',
   keyContextDefaultValue = isMinimized ? '__' : '_defaultValue'
+
+if (process.env.NODE_ENV === 'development') {
+  const oldVnode = options.vnode
+
+  options.vnode = vnode => {
+    let
+      type = vnode && vnode.type,
+      validate = typeof type === 'function' && type['js-preactive:validate']
+    
+    if (validate) {
+      const result = validate(vnode.props)
+
+      let errorMsg = null
+
+      if (result === false) {
+        errorMsg = 'Invalid value'
+      } else if (result !== true && result !== null && result !== undefined) {
+        errorMsg = result.message || 'Invalid value'
+      }
+
+      if (errorMsg) {
+        throw new TypeError('Prop validation error for component "'
+          + type.displayName + '" => ' + errorMsg)
+      }
+    }
+
+    return oldVnode
+      ? oldVnode(vnode)
+      : vnode
+  }
+}
 
 // --- constants -----------------------------------------------------
 
@@ -62,6 +93,14 @@ export function statelessComponent(arg1, arg2) {
     : config.render.bind(null)
 
   ret.displayName = config.displayName
+
+  if (process.env.ENV_NODE === 'development') {
+    if (config.validate) {
+      Object.defineProperty(ret, 'js-preactive:validate', {
+        value: config.validate
+      })
+    }
+  }
 
   if (config.memoize === true) {
     // TODO - `memo` is only available in "preact/compat"
@@ -238,6 +277,10 @@ export function statefulComponent(arg1, arg2) {
 
   CustomComponent.prototype = Object.create(Component.prototype)
   CustomComponent.displayName = config.displayName
+
+  Object.defineProperty(CustomComponent, 'js-preactive:validate', {
+    value: config.validate
+  })
 
   return CustomComponent
 }

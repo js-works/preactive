@@ -1,13 +1,13 @@
 import { h, createContext } from 'preact'
+import * as Spec from 'js-spec/validators'
 
 import {
   statefulComponent, componentStore,
   useContext, useEffect, useInterval, useMemo, useValue,
   useObsState, useObsValue,
+  toRef,
   useState
 } from '../main'
-
-import { toRef } from '../main/utils'
 
 export default {
   title: 'Demos'
@@ -26,18 +26,21 @@ export const contextDemo = () => <ContextDemo/>
 
 const CounterDemo1 = statefulComponent('CounterDemo1', (c, props) => {
   const
-    //state = useObsState(c, { count: props.initialValue || 0 }),
-    [count, setCount] = useValue(c, props.initialValue || 0),
+    initialValue = props.initialValue || 0,
+    label = props.label || 'Counter',
+    //state = useObsState(c, { count: initialValue }),
+    [count, setCount] = useValue(c, initialValue),
     onIncrement = () => setCount(it => it + 1),
     onInput = ev => setCount(ev.currentTarget.valueAsNumber)
 
   useEffect(c, () => {
-    console.log(`Value of "${props.label}" is now ${count.value}`)
+    console.log(`Value of "${label}" is now ${count.value}`)
   }, () => [count.value])
 
   return () =>
     <div>
       <h3>Counter demo 1:</h3>
+      <label>{label}: </label>
       <input type="number" value={count.value} onInput={onInput} />
       <button onClick={onIncrement}>{count.value}</button>
     </div>
@@ -48,8 +51,14 @@ const CounterDemo1 = statefulComponent('CounterDemo1', (c, props) => {
 const CounterDemo2 = statefulComponent({
   displayName: 'CounterDemo2',
 
-  defaultProps: {
+  validate: Spec.checkProps({
+    optional: {
+      initialValue: Spec.integer,
+      label: Spec.string
+    }
+  }),
 
+  defaultProps: {
     initialValue: 0,
     label: 'Counter'
   }
@@ -66,6 +75,7 @@ const CounterDemo2 = statefulComponent({
   return () =>
     <div>
       <h3>Counter demo 2:</h3>
+      <label>{props.label}: </label>
       <input type="number" value={state.count} onInput={onInput} />
       <button onClick={onIncrement}>{state.count}</button>
     </div>
@@ -81,6 +91,7 @@ const CounterDemo3 = statefulComponent({
     initialValue: 0,
     label: 'Counter'
   },
+
   init: (c, props) => {
     const
       state = useObsState(c, { count: props.initialValue }),
@@ -94,6 +105,7 @@ const CounterDemo3 = statefulComponent({
     return () =>
       <div>
         <h3>Counter demo 3:</h3>
+        <label>{props.label}: </label>
         <input type="number" value={state.count} onInput={onInput} />
         <button onClick={onIncrement}>{state.count}</button>
       </div>

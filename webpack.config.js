@@ -15,16 +15,15 @@ const
 
 const configs = []
 
-for (const moduleType of ['cjs', 'umd' /*, 'esm' */]) { // TODO - esm
+for (const moduleType of ['cjs', 'umd', 'esm']) {
   for (const environment of ['development', 'production']) {
-    // TODO - this is aweful - fix it
-    configs.push(createConfig(moduleType, environment, !configs, !configs))
+    configs.push(createConfig(moduleType, environment))
   }
 }
 
 module.exports = configs
 
-function createConfig(moduleType, environment, cleanup = false, zip = false) {
+function createConfig(moduleType, environment) {
   const isProd = environment === 'production'
 
   return {
@@ -59,15 +58,7 @@ function createConfig(moduleType, environment, cleanup = false, zip = false) {
     },
 
     plugins: [
-      ...(!cleanup ? [] : [new CleanupPlugin()]),
       ...(!isProd ? [] : [new CompressionPlugin()]),
-
-      ...(!zip ? [] : [
-        new ZipPlugin({
-          filename: 'source.zip',
-          exclude: ['node_modules', '.git', 'dist'],
-        })
-      ])
     ],
 
     optimization: {
