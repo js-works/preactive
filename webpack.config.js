@@ -1,10 +1,6 @@
-// TODO - fix that uglify vs terser issue
 const
-  CleanupPlugin = require('webpack-cleanup-plugin'),
-  UglifyJsPlugin = require('uglifyjs-webpack-plugin'),
   TerserPlugin = require('terser-webpack-plugin'),
   CompressionPlugin = require('compression-webpack-plugin'),
-  ZipPlugin = require('zip-webpack-plugin'),
   path = require('path'),
 
   libraryTargetMap = {
@@ -75,8 +71,6 @@ function createConfig(moduleType, environment) {
           }
         })
       ]
-      
-      //new UglifyJsPlugin()
     }
   }
 }
