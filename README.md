@@ -213,7 +213,7 @@ type Subscriber = () => void
 type Context<T> = Preact.Context<T>
 ```
 
-## Additional example - showing some more features
+### Additional example - showing some more features
 
 ```jsx
 import { h, render } from 'preact'
@@ -224,12 +224,14 @@ const Counter = statefulComponent({
   displayName: 'Counter',
   memoize: true,
 
-  validate: Spec.checkProps({
-    optional: {
-      initialCount: Spec.integer,
-      label: Spec.string
-    }
-  }),
+  ...process.env.NODE_ENV === 'development' && {
+    validate: Spec.checkProps({
+      optional: {
+        initialCount: Spec.integer,
+        label: Spec.string
+      }
+    })
+  },
 
   defaultProps: {
     initialCount: 0,
@@ -237,7 +239,7 @@ const Counter = statefulComponent({
   }
 }, (c, props) => {
   const
-    [count, setCount] = useValue(c, props.initialValue),
+    [count, setCount] = useValue(c, props.initialCount),
     onIncrement = () => setCount(it => it + 1)
 
   useEffect(() => {
