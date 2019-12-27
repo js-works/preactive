@@ -242,13 +242,13 @@ const Counter = statefulComponent({
     [count, setCount] = useValue(c, props.initialCount),
     onIncrement = () => setCount(it => it + 1)
 
-  useEffect(() => {
+  useEffect(c, () => {
     console.log(`"${props.label}" has been mounted`)
 
     return () => console.log(`Unmounting "${props.label}"`)
   }, null)
 
-  useEffect(() => {
+  useEffect(c, () => {
     console.log(`Value of "${props.label}": ${count.value}`)
   }, () => [count.value])
 
