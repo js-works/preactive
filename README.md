@@ -67,9 +67,9 @@ import { h, render } from 'preact'
 import { statelessComponent } from 'js-preactive'
 
 const HelloWorld = statelessComponent({
-  displayName: 'HelloWorld',
+  name: 'HelloWorld',
 
-  defaultProps: {
+  defaults: {
     salutation: 'Hello',
     name: 'world'
   }
@@ -89,9 +89,9 @@ import { h, render } from 'preact'
 import { statelessComponent } from 'js-preactive'
 
 const HelloWorld = statelessComponent({
-  displayName: 'HelloWorld',
+  name: 'HelloWorld',
 
-  defaultProps: {
+  defaults: {
     salutation: 'Hello',
     name: 'world'
   },
@@ -136,10 +136,10 @@ import { h, render } from 'preact'
 import { statefulComponent, useState } from 'js-preactive'
 
 const Counter = statefulComponent({
-  displayName: 'Counter',
+  name: 'Counter',
   memoize: true,
   
-  defaultProps: {
+  defaults: {
     initialCount: 0,
     label: 'Counter'
   }
@@ -165,10 +165,10 @@ import { h, render } from 'preact'
 import { statefulComponent, useState } from 'js-preactive'
 
 const Counter = statefulComponent({
-  displayName: 'Counter',
+  name: 'Counter',
   memoize: true,
   
-  defaultProps: {
+  defaults: {
     initialCount: 0,
     label: 'Counter'
   },
@@ -221,7 +221,7 @@ import { statefulComponent, useEffect, useValue } from 'js-preactive'
 import * as Spec from 'js-spec/validators' // 3rd party validation library
 
 const Counter = statefulComponent({
-  displayName: 'Counter',
+  name: 'Counter',
   memoize: true,
 
   ...process.env.NODE_ENV === 'development' && {
@@ -233,7 +233,7 @@ const Counter = statefulComponent({
     })
   },
 
-  defaultProps: {
+  defaults: {
     initialCount: 0,
     label: 'Counter'
   }
@@ -266,10 +266,10 @@ render(<Counter/>, document.getElementById('app'))
 
 ### Component definition
 
-- `statelessComponent(displayName, render: props => vnode)`
+- `statelessComponent(name, render: props => vnode)`
 - `statelessComponent(meta, render: props => vnode)`
 - `statelessComponent(config)`
-- `statefulComponent(displayName, init: c => props => vnode)`
+- `statefulComponent(name, init: c => props => vnode)`
 - `statefulComponent(meta, init: c => props => vnode)`
 - `statefulComponent(config)`
 

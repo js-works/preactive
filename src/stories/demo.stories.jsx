@@ -49,7 +49,7 @@ const CounterDemo1 = statefulComponent('CounterDemo1', (c, props) => {
 // === Counter demo 2 ================================================
 
 const CounterDemo2 = statefulComponent({
-  displayName: 'CounterDemo2',
+  name: 'CounterDemo2',
 
   validate: Spec.checkProps({
     optional: {
@@ -58,7 +58,7 @@ const CounterDemo2 = statefulComponent({
     }
   }),
 
-  defaultProps: {
+  defaults: {
     initialValue: 0,
     label: 'Counter'
   }
@@ -84,10 +84,10 @@ const CounterDemo2 = statefulComponent({
 // === Counter demo 3 ================================================
 
 const CounterDemo3 = statefulComponent({
-  displayName: 'CounterDemo3',
+  name: 'CounterDemo3',
   memoize: true,
 
-  defaultProps: {
+  defaults: {
     initialValue: 0,
     label: 'Counter'
   },
@@ -127,13 +127,14 @@ const useCounterStore = componentStore(setState => ({
 }), initCounterStore)
 
 const CounterDemo4 = statefulComponent({
-  displayName: 'CounterDemo4',
+  name: 'CounterDemo4',
   memoize: true,
 
-  defaultProps: {
+  defaults: {
     initialValue: 0,
     label: 'Counter'
   },
+
   init: (c, props) => {
     const
       store = useCounterStore(c, props.initialValue),

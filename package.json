@@ -1,6 +1,6 @@
 {
   "name": "js-preactive",
-  "version": "0.0.23",
+  "version": "0.0.25",
   "description": "",
   "main": "index.js",
   "module": "dist/js-preactive.esm.producion.js",
@@ -31,30 +31,30 @@
   },
   "homepage": "https://github.com/js-works/js-preactive#readme",
   "dependencies": {
-    "preact": "^10.1.1"
+    "preact": "^10.3.2"
   },
   "devDependencies": {
-    "@babel/core": "^7.7.4",
-    "@babel/preset-env": "^7.7.4",
-    "@storybook/html": "^5.2.6",
-    "@storybook/preact": "^5.2.8",
+    "@babel/core": "^7.8.4",
+    "@babel/preset-env": "^7.8.4",
+    "@storybook/html": "^5.3.13",
+    "@storybook/preact": "^5.3.13",
     "babel-core": "^6.26.3",
     "babel-loader": "^8.0.6",
     "babel-preset-es2015": "^6.24.1",
     "bestzip": "^2.1.5",
-    "compression-webpack-plugin": "^3.0.0",
-    "copyfiles": "^2.1.1",
-    "eslint": "^6.7.1",
-    "eslint-plugin-react": "^7.17.0",
+    "compression-webpack-plugin": "^3.1.0",
+    "copyfiles": "^2.2.0",
+    "eslint": "^6.8.0",
+    "eslint-plugin-react": "^7.18.3",
     "js-spec": "^0.1.78",
     "observable-slim": "^0.1.5",
     "on-change": "^1.6.2",
     "shx": "^0.3.2",
-    "terser-webpack-plugin": "^2.2.1",
+    "terser-webpack-plugin": "^2.3.5",
     "uglifyjs-webpack-plugin": "^2.2.0",
-    "webpack": "^4.41.2",
+    "webpack": "^4.41.6",
     "webpack-cleanup-plugin": "^0.5.1",
-    "webpack-cli": "^3.3.10",
+    "webpack-cli": "^3.3.11",
     "zip-webpack-plugin": "^3.0.0"
   }
 }

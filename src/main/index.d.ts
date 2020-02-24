@@ -45,14 +45,14 @@ type PickOptionalProps<T> = Partial<Pick<T, {
 }[keyof T]>>
 
 type SLComponentConfig<P extends Props, D extends PickOptionalProps<P> = {}> = {
-  displayName: string,
+  name: string,
   memoized?: boolean,
   validate?: (props: P) => boolean | null | Error,
   render(props: P & D): VirtualNode
 }
 
 type SFComponentConfig<P extends Props, D extends PickOptionalProps<P> = {}> = {
-  displayName: string,
+  name: string,
   memoize?: boolean,
   validate?: (props: P) => boolean | null | Error
   init(c: Ctrl, props: P & D): (props: P) => VirtualNode
@@ -78,7 +78,7 @@ declare function statelessComponent<
   P extends Props,
   D extends PickOptionalProps<P>
 >(
-  displayName: string,
+  name: string,
   render: (props: P & D) => VirtualNode
 ): Component<P>
 
@@ -101,7 +101,7 @@ declare function statefulComponent<
   P extends Props,
   D extends PickOptionalProps<P>
 >(
-  displayName: string,
+  name: string,
   init: (c: Ctrl, props: P & D) => VirtualNode
 ): Component<P>
 

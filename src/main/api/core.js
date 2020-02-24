@@ -48,7 +48,7 @@ const
 
 export function statelessComponent(arg1, arg2) {
   const config = typeof arg1 === 'string'
-    ? { displayName: arg1, init: arg2 }
+    ? { name: arg1, init: arg2 }
     : typeof arg2 === 'function'
       ? { ...arg1, init: arg2 }
       : arg1
@@ -75,24 +75,24 @@ export function statelessComponent(arg1, arg2) {
     }
 
     if (errorMsg) {
-      const displayName = type1 === 'string'
+      const name = type1 === 'string'
         ? arg1
-        : arg1 && typeof arg1.displayName === 'string'
-          ? arg1.displayName
+        : arg1 && typeof arg1.name === 'string'
+          ? arg1.name
           : '' 
       
       throw new TypeError(
         '[statelessComponent] Error: '
-          + (displayName ? `${displayName} ` : '')
+          + (name ? `${name} ` : '')
           + errorMsg)
     }
   }
 
-  let ret = config.defaultProps
-    ? props => config.render(Object.assign({}, config.defaultProps, props)) // TODO - optimize
+  let ret = config.defaults
+    ? props => config.render(Object.assign({}, config.defaults, props)) // TODO - optimize
     : config.render.bind(null)
 
-  ret.displayName = config.displayName
+  ret.name = config.name
 
   if (process.env.ENV_NODE === 'development') {
     if (config.validate) {
@@ -114,7 +114,7 @@ export function statelessComponent(arg1, arg2) {
 
 export function statefulComponent(arg1, arg2) {
   const config = typeof arg1 === 'string'
-    ? { displayName: arg1, init: arg2 }
+    ? { name: arg1, init: arg2 }
     : typeof arg2 === 'function'
       ? { ...arg1, init: arg2 }
       : arg1
@@ -141,22 +141,22 @@ export function statefulComponent(arg1, arg2) {
     }
 
     if (errorMsg) {
-      const displayName = type1 === 'string'
+      const name = type1 === 'string'
         ? arg1
-        : arg1 && typeof arg1.displayName === 'string'
-          ? arg1.displayName
+        : arg1 && typeof arg1.name === 'string'
+          ? arg1.name
           : '' 
       
       throw new TypeError(
         '[statefulComponent] Error '
-          + (displayName ? `when defining component "${displayName}" ` : '')
+          + (name ? `when defining component "${name}" ` : '')
           + '=> ' + errorMsg)
     }
   }
 
   const
-    hasDefaultProps =
-      config.defaultProps && Object.keys(config.defaultProps) > 0,
+    hasdefaults =
+      config.defaults && Object.keys(config.defaults) > 0,
 
     needsPropObject = config.init.length > 1
 
@@ -167,7 +167,7 @@ export function statefulComponent(arg1, arg2) {
 
     const
       propsObject =
-        !needsPropObject ? null : Object.assign({}, config.defaultProps, props),
+        !needsPropObject ? null : Object.assign({}, config.defaults, props),
 
       afterMountNotifier = createNotifier(),
       //beforeUpdateNotifier = createNotifier(),
@@ -226,8 +226,8 @@ export function statefulComponent(arg1, arg2) {
             delete propsObject[key]
           }
 
-          if (hasDefaultProps) {
-            Object.assign(propsObject, config.defaultProps)
+          if (hasdefaults) {
+            Object.assign(propsObject, config.defaults)
           }
 
           Object.assign(propsObject, this.props)
@@ -276,7 +276,7 @@ export function statefulComponent(arg1, arg2) {
   }
 
   CustomComponent.prototype = Object.create(Component.prototype)
-  CustomComponent.displayName = config.displayName
+  CustomComponent.displayName = config.name
 
   Object.defineProperty(CustomComponent, 'js-preactive:validate', {
     value: config.validate
@@ -294,21 +294,21 @@ let
 if (process.env.NODE_ENV === 'development') {
   validateStatelessComponentConfig =
     Spec.exact({
-      displayName: Spec.match(REGEX_DISPLAY_NAME),
+      name: Spec.match(REGEX_DISPLAY_NAME),
       memoize: Spec.optional(Spec.boolean),
       validate: Spec.optional(Spec.func),
 
-      defaultProps: Spec.optional(Spec.object),
+      defaults: Spec.optional(Spec.object),
       render: Spec.func
     })
 
   validateStatefulComponentConfig =
     Spec.exact({
-      displayName: Spec.match(REGEX_DISPLAY_NAME),
+      name: Spec.match(REGEX_DISPLAY_NAME),
       memoize: Spec.optional(Spec.boolean),
       validate: Spec.optional(Spec.func),
 
-      defaultProps: Spec.optional(Spec.object),
+      defaults: Spec.optional(Spec.object),
       init: Spec.func
     })
 }
