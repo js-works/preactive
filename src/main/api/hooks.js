@@ -2,8 +2,48 @@
 import onChange from 'on-change'
 import { asRef } from './utils'
 
+
+export function hook(name, func) {
+  function ret() {
+    if (process.env.NODE_ENV === 'development') {
+      const c = arguments[0]
+
+      if (!c || typeof c !== 'object' || typeof c.isInitialized !== 'function') {
+        throw new TypeError(`First argument of hook function "${name}" must be a component controller`)
+      } else if (c.isInitialized()) {
+        throw new Error(
+          `Hook function "${name}" has been called after initialization phase of component "${c.getDisplayName()}"`)
+      }
+    }
+
+    return func.apply(null, arguments)
+  }
+
+  Object.defineProperty(ret, 'name', {
+    value: name
+  })
+
+  return ret
+}
+
+// --- useProps ------------------------------------------------------
+
+export const useProps = hook('useProps', (c, defaultProps) => {
+  const props = Object.assign({}, defaultProps, c.getProps())
+
+  c.beforeUpdate(() => {
+    for (const propName in props) {
+      delete props[propName]
+    }
+
+    Object.assign(props, defaultProps, c.getProps())
+  })
+
+  return props
+})
+
 // --- useValue ------------------------------------------------------
-export function useValue(c, initialValue) {
+export const useValue = hook('useValue', (c, initialValue) => {
   let currValue = initialValue
   
   const
@@ -21,11 +61,11 @@ export function useValue(c, initialValue) {
     }
 
   return [value, setValue]
-}
+})
 
 // --- useState ------------------------------------------------------
 
-export function useState(c, initialState) {
+export const useState = hook('useState', (c, initialState) => {
   let state = {}
   
   const
@@ -61,25 +101,13 @@ export function useState(c, initialState) {
   }
   
   return [state, setState]
-}
-
-// --- useObsValue ----------------------------------------------
-
-export function useObsValue(c, initialValue) {
-  return useObsState(c, { value: initialValue })
-}
-
-// --- useObsState ---------------------------------------------------
-
-export function useObsState(c, initialState) {
-  return onChange(initialState, () => c.update())
-}
+})
 
 // --- useMemo -------------------------------------------------------
 
 // TODO - this is not really optimized, is it?
 
-export function useMemo(c, getValue, getDeps) {
+export const useMemo = hook('useMemo', (c, getValue, getDeps) => {
   let oldDeps, value
 
   const memo = {
@@ -96,11 +124,11 @@ export function useMemo(c, getValue, getDeps) {
   }
 
   return memo
-}
+})
 
 // --- useContext ----------------------------------------------------
 
-export function useContext(c, context) {
+export const useContext = hook('useContext', (c, context) => {
 
 
   return {
@@ -110,11 +138,11 @@ export function useContext(c, context) {
   }
 
   return ret
-}
+})
 
 // --- useEffect -----------------------------------------------------
 
-export function useEffect(c, action, getDeps) {
+export const useEffect = hook('useEffect', (c, action, getDeps) => {
   let
     oldDeps = null,
     cleanup
@@ -145,11 +173,11 @@ export function useEffect(c, action, getDeps) {
     throw new TypeError(
       '[useEffect] Third argument must either be undefined, null or a function')
   }
-}
+})
 
 // --- useInterval ---------------------------------------------------
 
-export function useInterval(c, callback, delay) {
+export const useInterval = hook('useInterval', (c, callback, delay) => {
   const
     callbackRef = asRef(callback),
     delayRef = asRef(delay)
@@ -159,7 +187,7 @@ export function useInterval(c, callback, delay) {
 
     return () => clearInterval(id)
   }, () => [callbackRef.current, delayRef.current])
-}
+})
 
 // --- locals --------------------------------------------------------
 

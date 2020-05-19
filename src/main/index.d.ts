@@ -40,25 +40,10 @@ type Component<P extends Props> = ComponentType<P>
 type Ref<T> = { current: T }
 type R<T> = T | Ref<T>
 
-type PickOptionalProps<T> = Partial<Pick<T, {
-    [K in keyof T]-?: T extends Record<K, T[K]> ? never : K
-}[keyof T]>>
-
-type SLComponentConfig<P extends Props, D extends PickOptionalProps<P> = {}> = {
-  name: string,
-  memoized?: boolean,
-  validate?: (props: P) => boolean | null | Error,
-  render(props: P & D): VirtualNode
-}
-
-type SFComponentConfig<P extends Props, D extends PickOptionalProps<P> = {}> = {
-  name: string,
-  memoize?: boolean,
-  validate?: (props: P) => boolean | null | Error
-  init(c: Ctrl, props: P & D): (props: P) => VirtualNode
-}
-
-type Ctrl = {
+type Ctrl<P extends Props = {}> = {
+  getDisplayName(): string,
+  getProps(): P,
+  isInitialized(): boolean,
   isMounted(): boolean,
   update(runOnceBeforeUpdate?: () => void): void,
   getContextValue<T>(ctx: Context<T>): T,
@@ -67,50 +52,14 @@ type Ctrl = {
   beforeUnmount(subscriber: () => void): void
 }
 
-declare function statelessComponent<
-  P extends Props,
-  D extends PickOptionalProps<P>
->(
-  config: SLComponentConfig<P, D>
+declare function statelessComponent<P extends Props>(
+  displayName: string,
+  render: (props: P) => VirtualNode
 ): Component<P>
 
-declare function statelessComponent<
-  P extends Props,
-  D extends PickOptionalProps<P>
->(
-  name: string,
-  render: (props: P & D) => VirtualNode
-): Component<P>
-
-declare function statelessComponent<
-  P extends Props,
-  D extends PickOptionalProps<P>
->(
-  config: Omit<SLComponentConfig<P>, 'render'>,
-  render: (props: P & D) => VirtualNode
-): Component<P>
-
-declare function statefulComponent<
-  P extends Props,
-  D extends PickOptionalProps<P>
->(
-  config: SFComponentConfig<P, D>
-): Component<P>
-
-declare function statefulComponent<
-  P extends Props,
-  D extends PickOptionalProps<P>
->(
-  name: string,
-  init: (c: Ctrl, props: P & D) => VirtualNode
-): Component<P>
-
-declare function statefulComponent<
-  P extends Props,
-  D extends PickOptionalProps<P>
->(
-  config: Omit<SFComponentConfig<P>, 'init'>,
-  init: (c: Ctrl, props: P & D) => VirtualNode
+declare function statefulComponent<P extends Props>(
+  displayName: string,
+  init: (c: Ctrl) => (props: P) => VirtualNode
 ): Component<P>
 
 // --- utils ---------------------------------------------------------

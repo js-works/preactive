@@ -217,28 +217,11 @@ type Context<T> = Preact.Context<T>
 
 ```jsx
 import { h, render } from 'preact'
-import { statefulComponent, useEffect, useValue } from 'js-preactive'
-import * as Spec from 'js-spec/validators' // 3rd party validation library
+import { statefulComponent, useEffect, useProps, useValue } from 'js-preactive'
 
-const Counter = statefulComponent({
-  name: 'Counter',
-  memoize: true,
-
-  ...process.env.NODE_ENV === 'development' && {
-    validate: Spec.checkProps({
-      optional: {
-        initialCount: Spec.integer,
-        label: Spec.string
-      }
-    })
-  },
-
-  defaults: {
-    initialCount: 0,
-    label: 'Counter'
-  }
-}, (c, props) => {
+const Counter = statefulComponent('Counter', c => {
   const
+    props = useProps(c, { initialCount: 0, label: 'Counter' }),
     [count, setCount] = useValue(c, props.initialCount),
     onIncrement = () => setCount(it => it + 1)
 
@@ -266,12 +249,8 @@ render(<Counter/>, document.getElementById('app'))
 
 ### Component definition
 
-- `statelessComponent(name, render: props => vnode)`
-- `statelessComponent(meta, render: props => vnode)`
-- `statelessComponent(config)`
-- `statefulComponent(name, init: c => props => vnode)`
-- `statefulComponent(meta, init: c => props => vnode)`
-- `statefulComponent(config)`
+- `statelessComponent(displayName, render: props => vnode)`
+- `statefulComponent(displayName, init: c => props => vnode)`
 
 ### Utility functions
 
@@ -292,4 +271,4 @@ render(<Counter/>, document.getElementById('app'))
 
 ## Project state
 
-This R&D project is still in a very early development state
+This R&D project is in a very early development state

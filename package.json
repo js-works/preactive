@@ -1,6 +1,6 @@
 {
   "name": "js-preactive",
-  "version": "0.0.25",
+  "version": "0.0.27",
   "description": "",
   "main": "index.js",
   "module": "dist/js-preactive.esm.producion.js",
@@ -16,7 +16,7 @@
     "storybook": "start-storybook -p 6006",
     "build-storybook": "build-storybook",
     "build": "webpack --config webpack.config.js",
-    "zip-source": "shx rm -rf ./build/source && shx mkdir -p ./build/source && copyfiles -a ./* ./.storybook ./build/source && shx cp -r ./src ./build/source && shx cp -r ./.storybook ./build/source/.storybook && shx mkdir -p ./dist/source && cd build/source && bestzip ../../dist/source/source.zip * .* && cd ../..",
+    "zip-source": "shx rm -rf ./build/source && shx mkdir -p ./build/source && copyfiles -a ./* ./.storybook ./build/source && shx cp -r ./src ./build/source && shx cp -r ./.storybook ./build/source/.storybook && shx mkdir -p ./dist/source && cd build && bestzip --force node ../dist/source/source.zip * .* && cd ..",
     "dist": "npm run clean && npm run build && npm run zip-source"
   },
   "repository": {
@@ -47,7 +47,6 @@
     "eslint": "^6.8.0",
     "eslint-plugin-react": "^7.18.3",
     "js-spec": "^0.1.78",
-    "observable-slim": "^0.1.5",
     "on-change": "^1.6.2",
     "shx": "^0.3.2",
     "terser-webpack-plugin": "^2.3.5",

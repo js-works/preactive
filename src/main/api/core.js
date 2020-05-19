@@ -1,6 +1,4 @@
 import { Component, options } from 'preact'
-//import { observe } from '@nx-js/observer-util'
-import * as Spec from 'js-spec/validators'
 
 // Brrrr, this is horrible as hell - please fix asap!!!!
 const
@@ -46,137 +44,75 @@ const
 
 // --- statelessComponent --------------------------------------------
 
-export function statelessComponent(arg1, arg2) {
-  const config = typeof arg1 === 'string'
-    ? { name: arg1, init: arg2 }
-    : typeof arg2 === 'function'
-      ? { ...arg1, init: arg2 }
-      : arg1
-
+export function statelessComponent(displayName, render) {
   if (process.env.NODE_ENV === 'development') {
     let errorMsg
 
-    const
-      type1 = typeof arg1,
-      type2 = typeof arg2
-
-    if (arg1 === null || (type1 !== 'object' && type1 !== 'string')) {
-      errorMsg = 'First argument must be a string or an object'
-    } else if (type1 === 'object' && arg2 !== undefined && type2 !== 'function') {
-      errorMsg = 'Unexpected second argument'
-    } else if (type1 === 'string' && type2 !== 'function') {
+    if (typeof displayName !== 'string') {
+      errorMsg = 'First argument must be a string'
+    } else if (!(displayName.match(REGEX_DISPLAY_NAME))) {
+      errorMsg = `Invalid component display name "${displayName}"`
+    } else if (typeof render !== 'function') {
       errorMsg = 'Expected function as second argument'
-    } else {
-      const error = validateStatelessComponentConfig(config)
-
-      if (error) {
-        errorMsg = error.message
-      }
     }
 
     if (errorMsg) {
-      const name = type1 === 'string'
-        ? arg1
-        : arg1 && typeof arg1.name === 'string'
-          ? arg1.name
-          : '' 
-      
       throw new TypeError(
-        '[statelessComponent] Error: '
-          + (name ? `${name} ` : '')
+        'Error when defining stateless component'
+          + (displayName ? ` "${displayName}": ` : ': ')
           + errorMsg)
     }
   }
 
-  let ret = config.defaults
-    ? props => config.render(Object.assign({}, config.defaults, props)) // TODO - optimize
-    : config.render.bind(null)
+  let ret = render.bind(null)
 
-  ret.name = config.name
-
-  if (process.env.ENV_NODE === 'development') {
-    if (config.validate) {
-      Object.defineProperty(ret, 'js-preactive:validate', {
-        value: config.validate
-      })
-    }
-  }
-
-  if (config.memoize === true) {
-    // TODO - `memo` is only available in "preact/compat"
-    // ret = memo(ret)
-  }
+  setPropValue(ret, 'name', displayName)
+  setPropValue(ret, 'displayName', displayName)
 
   return ret
 }
 
 // --- statefulComponent ---------------------------------------------
 
-export function statefulComponent(arg1, arg2) {
-  const config = typeof arg1 === 'string'
-    ? { name: arg1, init: arg2 }
-    : typeof arg2 === 'function'
-      ? { ...arg1, init: arg2 }
-      : arg1
-
+export function statefulComponent(displayName, init) {
   if (process.env.NODE_ENV === 'development') {
     let errorMsg
 
-    const
-      type1 = typeof arg1,
-      type2 = typeof arg2
-
-    if (arg1 === null || (type1 !== 'object' && type1 !== 'string')) {
-      errorMsg = 'First argument must be a string or an object'
-    } else if (type1 === 'object' && arg2 !== undefined && type2 !== 'function') {
-      errorMsg = 'Unexpected second argument'
-    } else if (type1 === 'string' && type2 !== 'function') {
+    if (typeof displayName !== 'string') {
+      errorMsg = 'First argument must be a string'
+    } else if (!(displayName.match(REGEX_DISPLAY_NAME))) {
+      errorMsg = `Invalid component display name "${displayName}"`
+    } else if (typeof init !== 'function') {
       errorMsg = 'Expected function as second argument'
-    } else {
-      const error = validateStatefulComponentConfig(config)
-
-      if (error) {
-        errorMsg = error.message
-      }
     }
 
     if (errorMsg) {
-      const name = type1 === 'string'
-        ? arg1
-        : arg1 && typeof arg1.name === 'string'
-          ? arg1.name
-          : '' 
-      
       throw new TypeError(
-        '[statefulComponent] Error '
-          + (name ? `when defining component "${name}" ` : '')
-          + '=> ' + errorMsg)
+        'Error when defining stateful component'
+          + (displayName ? ` "${displayName}": ` : ': ')
+          + errorMsg)
     }
   }
 
-  const
-    hasdefaults =
-      config.defaults && Object.keys(config.defaults) > 0,
-
-    needsPropObject = config.init.length > 1
-
   const CustomComponent = function (props) {
+    this.props = props
+
     let
       mounted = false,
-      oldProps = props
+      initialized = false
 
     const
-      propsObject =
-        !needsPropObject ? null : Object.assign({}, config.defaults, props),
-
       afterMountNotifier = createNotifier(),
-      //beforeUpdateNotifier = createNotifier(),
+      beforeUpdateNotifier = createNotifier(),
       afterUpdateNotifier = createNotifier(),
       beforeUnmountNotifier = createNotifier(),
       runOnceBeforeUpdateTasks = [],
 
       ctrl = {
+        getDisplayName: () => displayName,
+        getProps: () => this.props,
         isMounted: () => mounted,
+        isInitialized: () => initialized,
         update: runOnceBeforeUpdate => {
           if (runOnceBeforeUpdate) {
             runOnceBeforeUpdateTasks.push(runOnceBeforeUpdate)
@@ -192,16 +128,15 @@ export function statefulComponent(arg1, arg2) {
         },
 
         afterMount: afterMountNotifier.subscribe,
-        //beforeUpdate: beforeUpdateNotifier.subscribe,
+        beforeUpdate: beforeUpdateNotifier.subscribe,
         afterUpdate: afterUpdateNotifier.subscribe,
         beforeUnmount: beforeUnmountNotifier.subscribe,
-
         //runOnceBeforeUpdate: task => runOnceBeforeUpdateTasks.push(task)
       },
 
-      render = config.init(ctrl, propsObject)
-
-    this.props = props
+      render = init(ctrl)
+    
+    initialized = true
 
     this.componentDidMount = () => {
       mounted = true
@@ -211,29 +146,7 @@ export function statefulComponent(arg1, arg2) {
     this.componentDidUpdate = afterUpdateNotifier.notify
     this.componentWillUnmount = beforeUnmountNotifier.notify
 
-    if (config.memoize === true) {
-      this.shouldComponentUpdate = () => false
-    } else if (typeof config.memoize === 'function') {
-      // This will follow in a later version
-    }
-
     this.render = () => {
-      if (needsPropObject) {
-        if (this.props !== oldProps) {
-          oldProps = this.props
-
-          for (const key in propsObject) {
-            delete propsObject[key]
-          }
-
-          if (hasdefaults) {
-            Object.assign(propsObject, config.defaults)
-          }
-
-          Object.assign(propsObject, this.props)
-        }
-      }
-
       const taskCount = runOnceBeforeUpdateTasks.length
 
       for (let i = 0; i < taskCount; ++i) {
@@ -246,75 +159,23 @@ export function statefulComponent(arg1, arg2) {
         runOnceBeforeUpdateTasks.splice(0, taskCount)
       }
 
-      return render(props)
-
-      /*
-
       beforeUpdateNotifier.notify()
-      */
 
-      /*
-      let content
-
-      // TODO!!!!!!!!!!!!!!!!!!!!!
-      // This implementation is surely not working properly in general
-      if (mounted) {
-        content = render(props)
-      } else {
-        observe(() => {
-          content = render(props)
-
-          if (mounted) {
-            this.forceUpdate()
-          }
-        })
-      }
-
-      return content
-      */
+      return render(props)
     }
   }
 
   CustomComponent.prototype = Object.create(Component.prototype)
-  CustomComponent.displayName = config.name
-
-  Object.defineProperty(CustomComponent, 'js-preactive:validate', {
-    value: config.validate
-  })
+  setPropValue(CustomComponent, 'name', displayName)
+  setPropValue(CustomComponent, 'displayName', displayName)
 
   return CustomComponent
 }
 
 // --- locals --------------------------------------------------------
 
-let
-  validateStatelessComponentConfig,
-  validateStatefulComponentConfig
-
-if (process.env.NODE_ENV === 'development') {
-  validateStatelessComponentConfig =
-    Spec.exact({
-      name: Spec.match(REGEX_DISPLAY_NAME),
-      memoize: Spec.optional(Spec.boolean),
-      validate: Spec.optional(Spec.func),
-
-      defaults: Spec.optional(Spec.object),
-      render: Spec.func
-    })
-
-  validateStatefulComponentConfig =
-    Spec.exact({
-      name: Spec.match(REGEX_DISPLAY_NAME),
-      memoize: Spec.optional(Spec.boolean),
-      validate: Spec.optional(Spec.func),
-
-      defaults: Spec.optional(Spec.object),
-      init: Spec.func
-    })
-}
-
-function hasOnwProp(obj, propName) {
-  return Object.prototype.hasOwnProperty.call(obj, propName)
+function setPropValue(obj, propName, value) {
+  Object.defineProperty(obj, propName, { value })
 }
 
 function createNotifier() {
