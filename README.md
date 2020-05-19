@@ -72,11 +72,12 @@ methods directly they will only be used internally by some basic
 hook and utility functions):
 
 ```typescript
-type Ctrl<P extends Props> = {
+type Ctrl<P extends Props = {}> = {
   getDisplayName(): string,
+  getProps(): P,
   isInitialized(): boolean,
   isMounted(): boolean,
-  update(runOnceBeforeRender?: () => void): void,
+  refresh(runOnceBeforeRender?: () => void): void,
   getContextValue<T>(context: Context<T>): T,
   afterMount(subscriber: Subscriber): void,
   afterUpdate(subscriber: Subscriber): void,

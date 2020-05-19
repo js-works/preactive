@@ -19,7 +19,7 @@ export {
     asRef,
     toRef,
     isMounted,
-    forceUpdate,
+    refresh,
     getContextValue,
 
     // hooks
@@ -67,7 +67,7 @@ declare function statefulComponent<P extends Props>(
 declare function asRef<T>(subject: T | Ref<T>): Ref<T>
 declare function toRef<T>(getter: () => T): Ref<T>
 declare function isMounted(c: Ctrl): boolean
-declare function forceUpdate(c: Ctrl): void
+declare function refresh(c: Ctrl): void
 
 declare function getContextValue<T>(
   c: Ctrl,

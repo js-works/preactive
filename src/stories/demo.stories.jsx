@@ -2,8 +2,7 @@ import { h, createContext } from 'preact'
 import * as Spec from 'js-spec/validators'
 
 import {
-  statefulComponent, componentStore,
-  useContext, useEffect, useInterval, useMemo, useValue,
+  statefulComponent, useContext, useEffect, useInterval, useMemo, useValue,
   toRef, useProps, useState
 } from '../main'
 
@@ -11,16 +10,15 @@ export default {
   title: 'Demos'
 }
 
-export const counterDemo1 = () => <CounterDemo1/>
-export const counterDemo2 = () => <CounterDemo2/>
+export const counterDemo = () => <CounterDemo/>
 export const clockDemo = () => <ClockDemo/>
 export const memoDemo = () => <MemoDemo/>
 export const intervalDemo = () => <IntervalDemo/>
 export const contextDemo = () => <ContextDemo/>
 
-// === Counter demo 1 ================================================
+// === Counter demo ==================================================
 
-const CounterDemo1 = statefulComponent('CounterDemo1', c => {
+const CounterDemo = statefulComponent('CounterDemo', c => {
   const
     props = useProps(c, {
       initialCount: 0,
@@ -41,43 +39,6 @@ const CounterDemo1 = statefulComponent('CounterDemo1', c => {
       <label>{props.label}: </label>
       <input type="number" value={count.value} onInput={onInput} />
       <button onClick={onIncrement}>{count.value}</button>
-    </div>
-})
-
-// === Counter demo 2 ================================================
-
-function initCounterStore(initialValue = 0) {
-  return { count: initialValue }
-}
-
-const useCounterStore = componentStore(setState => ({
-  getCount: state => state.count,
-  
-  increment: (state, delta = 1) => {
-    setState('count', it => it + delta)
-  }
-}), initCounterStore)
-
-const CounterDemo2 = statefulComponent('CounterDemo2', c => {
-  const
-    props = useProps(c, {
-      initialCount: 0,
-      label: 'Counter'
-    }),
-  
-    store = useCounterStore(c, props.initialValue),
-    onIncrement = () => store.increment(),
-    onInput = ev => state.count = ev.currentTarget.valueAsNumber
-
-  useEffect(c, () => {
-    console.log(`Value of "${props.label}" is now ${store.getCount()}`)
-  }, () => [store.getCount()])
-
-  return () =>
-    <div>
-      <h3>Counter demo 2:</h3>
-      <input type="number" value={store.getCount()} onInput={onInput} />
-      <button onClick={onIncrement}>{store.getCount()}</button>
     </div>
 })
 

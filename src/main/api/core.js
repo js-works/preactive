@@ -113,7 +113,8 @@ export function statefulComponent(displayName, init) {
         getProps: () => this.props,
         isMounted: () => mounted,
         isInitialized: () => initialized,
-        update: runOnceBeforeUpdate => {
+
+        refresh: runOnceBeforeUpdate => {
           if (runOnceBeforeUpdate) {
             runOnceBeforeUpdateTasks.push(runOnceBeforeUpdate)
           }

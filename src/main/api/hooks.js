@@ -54,7 +54,7 @@ let nextValue = initialValue
         ? updater(nextValue)
         : updater
 
-      c.update(() => {
+      c.refresh(() => {
         value.value = nextValue
       })
     }
@@ -86,7 +86,7 @@ export const useState = hook('useState', (c, initialState) => {
         Object.assign(nextState, arg1)
       }
 
-      c.update(() => {
+      c.refresh(() => {
         if (mergeNecessary) {
           Object.assign(state, nextState)
           mergeNecessary = false

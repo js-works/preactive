@@ -28,10 +28,10 @@ export function isMounted(c) {
   return c.isMounted()
 }
 
-// --- forceUpdate ---------------------------------------------------
+// --- refresh ---------------------------------------------------
 
-export function forceUpdate(c) {
-  c.update()
+export function refresh(c) {
+  c.refresh()
 }
 
 // --- getContextValue -----------------------------------------------
@@ -44,45 +44,4 @@ export function getContextValue(c, ctx, defaultValue) {
   }
 
   return ret
-}
-
-// --- getComponentStore ---------------------------------------------
-
-export function componentStore(initMethods, initState) {
-  return function useStore(c, ...args) {
-    let state =
-      typeof initState === 'function'
-        ? initState(...args)
-        : initState && typeof initState === 'object'
-          ? initState
-          : {}
-
-    const
-      store = {},
-
-      setState = (arg1, arg2) => {
-        if (typeof arg1 === 'string') {
-          if (typeof arg2 === 'function') {
-            setState(state => ({ [arg1]: arg2(state[arg1]) }))
-          } else {
-            setState(() => ({ [arg1]: arg2 }))
-          }
-        } else if (typeof arg1 !== 'function') {
-          setState(() => arg1)
-        } else {
-          c.update(() => {
-            state = Object.assign({}, state, arg1(state))
-          })
-        }
-      },
-
-      getState = () => state,
-      methods = initMethods(setState, getState)
-    
-    Object.keys(methods).forEach(key => {
-      store[key] = (...args) => methods[key](state, ...args)
-    })
-
-    return store
-  }
 }
