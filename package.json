@@ -1,6 +1,6 @@
 {
   "name": "js-preactive",
-  "version": "0.0.27",
+  "version": "0.0.30",
   "description": "",
   "main": "index.js",
   "module": "dist/js-preactive.esm.producion.js",
@@ -21,7 +21,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/js-works/js-preactive.git"
+    "url": "https://github.com/js-works/js-preactive.git"
   },
   "keywords": [],
   "author": "",

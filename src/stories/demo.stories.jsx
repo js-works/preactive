@@ -140,15 +140,15 @@ const IntervalDemo = statefulComponent('IntervalDemo', c => {
       delay: 1000
     }),
 
-    onReset = () => setState({ delay: 1000 })
+    onReset = () => setState('delay', 1000)
 
   useInterval(c, () => {
-    state.count++
+    setState('count', it => it + 1)
   }, toRef(() => state.delay))
 
   useInterval(c, () => {
     if (state.delay > 10) {
-      state.delay /= 2
+      setState('delay', it => it /= 2)
     }
   }, 1000)
 

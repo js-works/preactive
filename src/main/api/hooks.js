@@ -44,20 +44,19 @@ export const useProps = hook('useProps', (c, defaultProps) => {
 
 // --- useValue ------------------------------------------------------
 export const useValue = hook('useValue', (c, initialValue) => {
-  let currValue = initialValue
+let nextValue = initialValue
   
   const
-    value = {
-      get value() {
-        return currValue
-      }
-    },
-
+    value = { value: initialValue },
+  
     setValue = updater => {
-      c.update(() =>
-        currValue = typeof updater === 'function'
-          ? updater(currValue)
-          : updater)
+      nextValue = typeof updater === 'function'
+        ? updater(nextValue)
+        : updater
+
+      c.update(() => {
+        value.value = nextValue
+      })
     }
 
   return [value, setValue]
@@ -66,40 +65,37 @@ export const useValue = hook('useValue', (c, initialValue) => {
 // --- useState ------------------------------------------------------
 
 export const useState = hook('useState', (c, initialState) => {
-  let state = {}
-  
+  let
+    nextState,
+    mergeNecessary = false
+
   const
-    data = Object.assign({}, initialState),
-    keys = Object.keys(initialState)
+    state = { ...initialState },
 
-  Object.keys(initialState).forEach(key => {
-    Object.defineProperty(state, key, {
-      enumerable: true,
-      get: () => data[key]
-    })
-  })
+    setState = (arg1, arg2) => {
+      mergeNecessary = true
 
-  const setState = (arg1, arg2) => {
-    let updater
+      if (typeof arg1 === 'string') {
+        nextState[arg1] =
+          typeof arg2 === 'function'
+            ? arg2(nextState[arg1])
+            : arg2
+      } else if (typeof arg1 === 'function') {
+        Object.assign(nextState, arg1(nextState))
+      } else {
+        Object.assign(nextState, arg1)
+      }
 
-    if (typeof arg1 !== 'string') {
-      updater = arg1
-    } else if (typeof arg2 !== 'function') {
-      updater = { [arg1]: arg2 }
-    } else {
-      updater = state => ({
-        [arg1]: arg2(state[arg1])
+      c.update(() => {
+        if (mergeNecessary) {
+          Object.assign(state, nextState)
+          mergeNecessary = false
+        }
       })
-    } 
+    }
 
-    c.update(() => {
-      Object.assign(data, typeof updater === 'function'
-        ? updater(state)
-        : updater
-      )
-    })
-  }
-  
+  nextState = { ...state }
+
   return [state, setState]
 })
 

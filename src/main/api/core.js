@@ -161,7 +161,7 @@ export function statefulComponent(displayName, init) {
 
       beforeUpdateNotifier.notify()
 
-      return render(props)
+      return render(this.props)
     }
   }
 
