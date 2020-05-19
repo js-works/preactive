@@ -28,7 +28,7 @@ npm run storybook
 
 ## Examples
 
-### Stateless components (variant 1)
+### Stateless components
 
 ```jsx
 import { h, render } from 'preact'
@@ -43,72 +43,7 @@ const HelloWorld = statelessComponent('HelloWorld', props => {
 })
 ```
 
-### Stateless components (variant 2)
-
-```jsx
-import { h, render } from 'preact'
-import { statelessComponent } from 'js-preactive'
-
-const HelloWorld = statelessComponent('HelloWorld', ({
-  salutation = 'Hello',
-  name = 'world'
-}) => {
-  return (
-    <div>
-      {salutation}, {name}
-    </div>
-  )
-})
-```
-### Stateless components (variant 3)
-
-```jsx
-import { h, render } from 'preact'
-import { statelessComponent } from 'js-preactive'
-
-const HelloWorld = statelessComponent({
-  name: 'HelloWorld',
-
-  defaults: {
-    salutation: 'Hello',
-    name: 'world'
-  }
-}, props => {
-  return (
-    <div>
-      {props.salutation}, {props.name}
-    </div>
-  )
-})
-```
-
-### Stateless components (variant 4)
-
-```jsx
-import { h, render } from 'preact'
-import { statelessComponent } from 'js-preactive'
-
-const HelloWorld = statelessComponent({
-  name: 'HelloWorld',
-
-  defaults: {
-    salutation: 'Hello',
-    name: 'world'
-  },
-
-  render: renderHelloWorld
-}
-
-function renderHelloWorld(props) {
-  return (
-    <div>
-      {props.salutation}, {props.name}
-    </div>
-  )
-}
-```
-
-### Stateful components (variant 1)
+### Stateful components
 
 ```jsx
 import { h, render } from 'preact'
@@ -129,68 +64,6 @@ const Counter = statefulComponent('Counter', (c, props) => {
 render(<Counter/>, document.getElementById('app'))
 ```
 
-### Stateful components (variant 2)
-
-```jsx
-import { h, render } from 'preact'
-import { statefulComponent, useState } from 'js-preactive'
-
-const Counter = statefulComponent({
-  name: 'Counter',
-  memoize: true,
-  
-  defaults: {
-    initialCount: 0,
-    label: 'Counter'
-  }
-}, (c, props) => {
-  const
-    [state, setState] = useState(c, { count: props.initialCount }),
-    onIncrement = () => setState('count', it => it + 1)
-
-  return () =>
-    <div>
-      <label>{props.label}: </label>
-      <button onClick={onIncrement}>{state.count}</button>
-    </div>
-})
-
-render(<Counter/>, document.getElementById('app'))
-```
-
-### Stateful components (variant 3)
-
-```jsx
-import { h, render } from 'preact'
-import { statefulComponent, useState } from 'js-preactive'
-
-const Counter = statefulComponent({
-  name: 'Counter',
-  memoize: true,
-  
-  defaults: {
-    initialCount: 0,
-    label: 'Counter'
-  },
-
-  init: initCounter
-})
-
-function initCounter(c, props) {
-  const
-    [state, setState] = useState(c, { count: props.initialCount }),
-    onIncrement = () => setState('count', it => it + 1)
-
-  return () =>
-    <div>
-      <label>{props.label}: </label>
-      <button onClick={onIncrement}>{state.count}</button>
-    </div>
-})
-
-render(<Counter/>, document.getElementById('app'))
-```
-
 In the above examples the `c` is a so called component controller
 (some kind of representation for the component instance).
 The type of the component controller is currently the following
@@ -199,9 +72,11 @@ methods directly they will only be used internally by some basic
 hook and utility functions):
 
 ```typescript
-type Ctrl = {
-  update(runOnceBeforeRender?: () => void): void,
+type Ctrl<P extends Props> = {
+  getDisplayName(): string,
+  isInitialized(): boolean,
   isMounted(): boolean,
+  update(runOnceBeforeRender?: () => void): void,
   getContextValue<T>(context: Context<T>): T,
   afterMount(subscriber: Subscriber): void,
   afterUpdate(subscriber: Subscriber): void,
