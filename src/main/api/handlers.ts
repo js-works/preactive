@@ -217,6 +217,68 @@ export const withInterval = handler('withInterval', (
   }, () => [callbackRef.current, delayRef.current])
 })
 
+// --- withPromise ---------------------------------------------------
+
+type PromiseRes<T> = {
+  result: undefined,
+  error: undefined,
+  state: 'pending'
+} | {
+  result: T,
+  error: undefined,
+  state: 'resolved'
+} | {
+  result: undefined,
+  error: Error,
+  state: 'rejected'
+}
+
+const initialState: PromiseRes<any> = {
+  result: undefined,
+  error: undefined,
+  state: 'pending'
+}
+
+export const withPromise = handler('withPromise', function<T>(
+  c: Ctrl,
+  getPromise: () => Promise<T>,
+  getDeps?: () => any[]
+): PromiseRes<T> {
+  const [state, setState] = withState<PromiseRes<T>>(c, initialState)
+
+  let promiseIdx = -1
+
+  withEffect(c, () => {
+    ++promiseIdx
+
+    if (state.state !== 'pending') {
+      setState(initialState)
+    }
+
+    const myPromiseIdx = promiseIdx
+  
+    getPromise()
+      .then(result => {
+        if (promiseIdx === myPromiseIdx) {
+          setState({
+            result,
+            state: 'resolved'
+          })
+        }
+      })
+      .catch(error => {
+        if (promiseIdx === myPromiseIdx) {
+          setState({
+            error: error instanceof Error ? error : new Error(String(error)),
+            state: 'rejected'
+          })
+        }
+      })
+  }, typeof getDeps === 'function' ? getDeps : null)
+
+  return state
+})
+
 // --- locals --------------------------------------------------------
 
 function isEqualArray(arr1: any[], arr2: any[]) {

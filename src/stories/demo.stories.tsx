@@ -2,7 +2,7 @@
 import { h, createContext } from 'preact'
 
 import {
-  stateful, handler, withContext, withEffect, withInterval, withMemo, withValue,
+  stateful, handler, refresh, withContext, withEffect, withInterval, withMemo, withPromise, withValue,
   toRef, withProps, withState
 } from '../main'
 
@@ -15,6 +15,7 @@ export const clockDemo = () => <ClockDemo/>
 export const memoDemo = () => <MemoDemo/>
 export const intervalDemo = () => <IntervalDemo/>
 export const contextDemo = () => <ContextDemo/>
+export const promiseDemo = () => <PromiseDemo/>
 
 // === Counter demo ==================================================
 
@@ -177,3 +178,57 @@ const LocaleText = stateful<LocaleTextProps>('LocaleText', c => {
     </p>
   )
 })
+
+// === promise demo ==================================================
+
+type LoaderProps = {
+  loadingText?: string,
+  finishText?: string
+}
+
+const Loader = stateful<LoaderProps>('DataLoad', c => {
+  const
+    props = withProps(c),
+    res = withPromise(c, () => wait(4000))
+
+  return () => res.state === 'pending'
+    ? <div>{props.loadingText}</div>
+    : <div>{props.finishText}</div>
+})
+
+const PromiseDemo = stateful('PromiseDemo', c => {
+  const
+    [state, setState] = withState(c, {
+      key: 0,
+      loadingText: 'Loading...',
+      finishText: 'Finished!'
+    }),
+
+    onRefresh = () => refresh(c),
+    onRestart = () => setState('key', (it: any) => it + 1), // TODO
+
+    onToggleLoadingText = () => setState('loadingText',
+      (it: any) => it === 'Loading...' ? 'Please wait...' : 'Loading...'), // TODO
+
+    onToggleFinishText = () => setState('finishText',
+      (it: any) => it === 'Finished!' ? 'Done!' : 'Finished!') // TODO
+
+  return () => (
+    <div>
+      <h3>Promise demo (last update {getTime()})</h3>
+      <section>
+        <Loader key={state.key} loadingText={state.loadingText} finishText={state.finishText}/>
+      </section>
+      <br />
+      <button onClick={onRefresh}>Refresh</button>
+      <button onClick={onRestart}>Restart</button>
+      <button onClick={onToggleLoadingText}>Toggle loading text</button>
+      <button onClick={onToggleFinishText}>Toggle finish text</button>
+    </div>
+  )
+})
+
+function wait(ms: number) {
+  return new Promise(resolve =>
+    setTimeout(() => resolve(), ms))
+}
