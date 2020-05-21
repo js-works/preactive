@@ -2,7 +2,7 @@
 import { h, createContext } from 'preact'
 
 import {
-  stateful, hook, withContext, withEffect, withInterval, withMemo, withValue,
+  stateful, handler, withContext, withEffect, withInterval, withMemo, withValue,
   toRef, withProps, withState
 } from '../main'
 
@@ -58,7 +58,7 @@ function getTime() {
   return new Date().toLocaleTimeString()
 }
 
-const withTime = hook('withTime', c => {
+const withTime = handler('withTime', c => {
   const [time, setTime] = withValue(c, getTime())
 
   withInterval(c, () => {

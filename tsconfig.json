@@ -11,7 +11,7 @@
     "removeComments": true,
     "preserveConstEnums": true,
     "downlevelIteration": true,
-    "sourceMap": true, 
+    "sourceMap": false, 
     "lib": ["es7", "dom"],
     "esModuleInterop": true,
     "baseUrl": ".",
@@ -33,7 +33,7 @@
   ],
 
   "include": [
-    "./src/modules/*/main/**/*.ts*"
+    "./src/**/*.ts*"
   ],
 
   "exclude": [
