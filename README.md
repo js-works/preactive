@@ -44,6 +44,8 @@ const HelloWorld = stateless('HelloWorld', ({
     </div>
   )
 })
+
+render(<HelloWorld/>, document.getElementById('app'))
 ```
 
 ### Stateful components
@@ -59,7 +61,7 @@ const Counter = stateful('Counter', c => {
       label: 'Counter'
     }),
 
-    [state, setState] = useState(c, {
+    [state, setState] = withState(c, {
       count: props.initialCount
     }),
 
@@ -104,12 +106,12 @@ type Context<T> = Preact.Context<T>
 
 ```jsx
 import { h, render } from 'preact'
-import { statefulComponent, useEffect, useProps, useValue } from 'js-preactive'
+import { statefulComponent, withEffect, withProps, withValue } from 'js-preactive'
 
 const Counter = statefulComponent('Counter', c => {
   const
-    props = useProps(c, { initialCount: 0, label: 'Counter' }),
-    [count, setCount] = useValue(c, props.initialCount),
+    props = withProps(c, { initialCount: 0, label: 'Counter' }),
+    [count, setCount] = withValue(c, props.initialCount),
     onIncrement = () => setCount(it => it + 1)
 
   useEffect(c, () => {

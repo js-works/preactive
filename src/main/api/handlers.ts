@@ -5,7 +5,7 @@ import Props from './types/Props'
 import Action from '../internal/types/Action'
 import ValueOrRef from './types/ValueOrRef'
 
-export function hook<P extends Props, A extends [Ctrl<P>, ...any[]], R>(
+export function handler<P extends Props, A extends [Ctrl<P>, ...any[]], R>(
   name: string,
   func: (...args: A) => R
  ): (...args: A) => R {
@@ -14,7 +14,7 @@ export function hook<P extends Props, A extends [Ctrl<P>, ...any[]], R>(
       const c = arguments[0]
 
       if (!c || typeof c !== 'object' || typeof c.isInitialized !== 'function') {
-        throw new TypeError(`First argument of hook function "${name}" must be a component controller`)
+        throw new TypeError(`First argument of handler function "${name}" must be a component controller`)
       } else if (c.isInitialized()) {
         throw new Error(
           `Hook function "${name}" has been called after initialization phase of component "${c.getDisplayName()}"`)
@@ -31,9 +31,9 @@ export function hook<P extends Props, A extends [Ctrl<P>, ...any[]], R>(
   return ret
 }
 
-// --- useProps ------------------------------------------------------
+// --- withProps ------------------------------------------------------
 
-export const useProps = hook('useProps', function <P extends Props = {}, D extends Partial<P> = {}>( // TODO
+export const withProps = handler('withProps', function <P extends Props = {}, D extends Partial<P> = {}>( // TODO
   c: Ctrl<P>,
   defaultProps?: D
 ): P & D {
@@ -50,9 +50,9 @@ export const useProps = hook('useProps', function <P extends Props = {}, D exten
   return props
 })
 
-// --- useValue ------------------------------------------------------
+// --- withValue ------------------------------------------------------
 
-export const useValue = hook('useValue',  function <T>(c: Ctrl, initialValue: T):
+export const withValue = handler('withValue',  function <T>(c: Ctrl, initialValue: T):
   [{ value: T }, (updater: (T | ((value: T) => T))) => void]
 {
   let nextValue = initialValue
@@ -73,7 +73,7 @@ export const useValue = hook('useValue',  function <T>(c: Ctrl, initialValue: T)
   return [value, setValue as any] // TODO
 })
 
-// --- useState ------------------------------------------------------
+// --- withState ------------------------------------------------------
 
 type StateUpdater<T extends Record<string, any>> = {
   (newState: Partial<T>): void,
@@ -82,7 +82,7 @@ type StateUpdater<T extends Record<string, any>> = {
   (key: keyof T, valueUpdate: (oldValue: T[typeof key]) => T[typeof key]): void
 }
 
-export const useState = hook('useState', function <T extends Record<string, any>>(
+export const withState = handler('withState', function <T extends Record<string, any>>(
   c: Ctrl,
   initialState: T
 ): [T, StateUpdater<T>] {
@@ -120,11 +120,11 @@ export const useState = hook('useState', function <T extends Record<string, any>
   return [state, setState as any] // TODO
 })
 
-// --- useMemo -------------------------------------------------------
+// --- withMemo -------------------------------------------------------
 
 // TODO - this is not really optimized, is it?
 
-export const useMemo = hook('useMemo', function <T, A extends any[], G extends () => A>(
+export const withMemo = handler('withMemo', function <T, A extends any[], G extends () => A>(
   c: Ctrl,
   getValue: (...args: ReturnType<G>) => T,
   getDeps: G
@@ -147,9 +147,9 @@ export const useMemo = hook('useMemo', function <T, A extends any[], G extends (
   return memo
 })
 
-// --- useContext ----------------------------------------------------
+// --- withContext ----------------------------------------------------
 
-export const useContext = hook('useContext', function <T>(
+export const withContext = handler('withContext', function <T>(
   c: Ctrl,
   context: Context<T>
 ): { value: T } {
@@ -160,9 +160,9 @@ export const useContext = hook('useContext', function <T>(
   }
 })
 
-// --- useEffect -----------------------------------------------------
+// --- withEffect -----------------------------------------------------
 
-export const useEffect = hook('useEffect', function (
+export const withEffect = handler('withEffect', function (
   c: Ctrl,
   action: () => void | undefined | null | (() => void),
   getDeps?: null | (() => any[])
@@ -195,13 +195,13 @@ export const useEffect = hook('useEffect', function (
     c.afterUpdate(callback)
   } else {
     throw new TypeError(
-      '[useEffect] Third argument must either be undefined, null or a function')
+      '[withEffect] Third argument must either be undefined, null or a function')
   }
 })
 
-// --- useInterval ---------------------------------------------------
+// --- withInterval ---------------------------------------------------
 
-export const useInterval = hook('useInterval', (
+export const withInterval = handler('withInterval', (
   c,
   callback: ValueOrRef<() => void>,
   delay: ValueOrRef<number>
@@ -210,7 +210,7 @@ export const useInterval = hook('useInterval', (
     callbackRef = asRef(callback),
     delayRef = asRef(delay)
   
-  useEffect(c, () => {
+  withEffect(c, () => {
     const id = setInterval(callbackRef.current, delayRef.current)
 
     return () => clearInterval(id)

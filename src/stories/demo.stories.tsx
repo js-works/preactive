@@ -2,8 +2,8 @@
 import { h, createContext } from 'preact'
 
 import {
-  stateful, hook, useContext, useEffect, useInterval, useMemo, useValue,
-  toRef, useProps, useState
+  stateful, hook, withContext, withEffect, withInterval, withMemo, withValue,
+  toRef, withProps, withState
 } from '../main'
 
 export default {
@@ -20,16 +20,16 @@ export const contextDemo = () => <ContextDemo/>
 
 const CounterDemo = stateful('CounterDemo', c => {
   const
-    props = useProps(c, {
+    props = withProps(c, {
       initialCount: 0,
       label: 'Counter'
     }),
 
-    [count, setCount] = useValue(c, props.initialCount),
+    [count, setCount] = withValue(c, props.initialCount),
     onIncrement = () => setCount(it => it + 1),
     onInput = (ev: any) => setCount(ev.currentTarget.valueAsNumber) // TODO
 
-  useEffect(c, () => {
+  withEffect(c, () => {
     console.log(`Value of "${props.label}" is now ${count.value}`)
   }, () => [count.value])
 
@@ -45,7 +45,7 @@ const CounterDemo = stateful('CounterDemo', c => {
 // === Clock demo ====================================================
 
 const ClockDemo = stateful('ClockDemo', c => {
-  const time = useTime(c)
+  const time = withTime(c)
 
   return () =>
     <div>
@@ -58,10 +58,10 @@ function getTime() {
   return new Date().toLocaleTimeString()
 }
 
-const useTime = hook('useTime', c => {
-  const [time, setTime] = useValue(c, getTime())
+const withTime = hook('withTime', c => {
+  const [time, setTime] = withValue(c, getTime())
 
-  useInterval(c, () => {
+  withInterval(c, () => {
     setTime(getTime())
   }, 1000)
 
@@ -72,10 +72,10 @@ const useTime = hook('useTime', c => {
 
 const MemoDemo = stateful('MemoDemo', c => {
   const
-    [state, setState] = useState(c, { count: 0 }),
+    [state, setState] = withState(c, { count: 0 }),
     onButtonClick = () => setState({ count: state.count + 1 }),
 
-    memo = useMemo(c,
+    memo = withMemo(c,
       () => 'Last time the memoized value was calculated: ' + new Date().toLocaleTimeString(),
       () => [Math.floor(state.count / 5)])
 
@@ -96,18 +96,18 @@ const MemoDemo = stateful('MemoDemo', c => {
 
 const IntervalDemo = stateful('IntervalDemo', c => {
   const
-    [state, setState] = useState(c, {
+    [state, setState] = withState(c, {
       count: 0,
       delay: 1000
     }),
 
     onReset = () => setState('delay', 1000)
 
-  useInterval(c, () => {
+  withInterval(c, () => {
     setState('count', it => it + 1)
   }, toRef(() => state.delay))
 
-  useInterval(c, () => {
+  withInterval(c, () => {
     if (state.delay > 10) {
       setState('delay', it => it /= 2)
     }
@@ -143,7 +143,7 @@ const LocaleCtx = createContext('en')
 
 const ContextDemo = stateful('ContextDemo', c => {
   const
-    [state, setState] = useState(c, { locale: 'en' }),
+    [state, setState] = withState(c, { locale: 'en' }),
     onLocaleChange = (ev: any) =>setState({ locale: ev.target.value })
 
   return () => (
@@ -168,8 +168,8 @@ type LocaleTextProps = {
 
 const LocaleText = stateful<LocaleTextProps>('LocaleText', c => {
   const
-    props = useProps(c),
-    locale = useContext(c, LocaleCtx)
+    props = withProps(c),
+    locale = withContext(c, LocaleCtx)
 
   return () => (
     <p>
