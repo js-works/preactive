@@ -34,7 +34,12 @@ npm run storybook
 import { h, render } from 'preact'
 import { stateless } from 'js-preactive'
 
-const HelloWorld = stateless('HelloWorld', ({
+type HelloWorldProps = {
+  salutation?: string,
+  name?: string
+}
+
+const HelloWorld = stateless<HelloWorldProps>('HelloWorld', ({
   salutation = 'Hello',
   name = 'world'
 }) => {
@@ -54,7 +59,12 @@ render(<HelloWorld/>, document.getElementById('app'))
 import { h, render } from 'preact'
 import { stateful, withProps, withState } from 'js-preactive'
 
-const Counter = stateful('Counter', c => {
+type CounterProps = {
+  initialCount?: number,
+  label?: string
+}
+
+const Counter = stateful<CounterProps>('Counter', c => {
   const
     props = withProps(c, {
       initialCount: 0,
@@ -108,7 +118,12 @@ type Context<T> = Preact.Context<T>
 import { h, render } from 'preact'
 import { stateful, withEffect, withProps, withValue } from 'js-preactive'
 
-const Counter = stateful('Counter', c => {
+type CounterProps = {
+  initialCount?: number,
+  label?: string
+}
+
+const Counter = stateful<CounterProps>('Counter', c => {
   const
     props = withProps(c, { initialCount: 0, label: 'Counter' }),
     [count, setCount] = withValue(c, props.initialCount),
@@ -154,11 +169,11 @@ render(<Counter/>, document.getElementById('app'))
 - `withProps(c, defaultProps?)`
 - `withState(c, initialState)`
 - `withValue(c, initialCount)`
-- `withMemo(c, calculation, () => dependencies)`
+- `withMemo(c, calculation, getDependencies)`
 - `withContext(c, context)`
-- `withEffect(c, action, () => dependencies)`
+- `withEffect(c, action, getDependencies? | null)`
 - `withInterval(c, action, milliseconds)`
-- `withPromise(c, () => getPromise)`
+- `withPromise(c, getPromise)`
 
 ## Project state
 
