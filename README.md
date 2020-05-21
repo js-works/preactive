@@ -1,7 +1,7 @@
 # js-preactive 
 
-A R&D project to evaluate an alternative API for developing
-components and hook functions with Preact.<br>
+A R&D project to evaluate an alternative API for developing components
+with Preact using an alternative to hook functions (called "handlers").<br>
 The main advantages of the new API are:
 
 - 0% magic
@@ -9,7 +9,7 @@ The main advantages of the new API are:
 - No rules of hooks
 - No special linter necessary
 - 100% accurately typeable - in the function type signature
-  of hook functions or function that generate hook functions etc.,
+  of handler functions or function that generate handler functions etc.,
   it will always be visible what we are dealing with.
 
 ### Installation
@@ -69,7 +69,7 @@ const Counter = stateful('Counter', c => {
 
   return () =>
     <div>
-      <label>{props.label || 'Counter'}: </label>
+      <label>{props.label}: </label>
       <button onClick={onIncrement}>{state.count}</button>
     </div>
 })
@@ -81,8 +81,8 @@ In the above examples the `c` is a so called component controller
 (some kind of representation for the component instance).
 The type of the component controller is currently the following
 (please be aware that "normal" developers will never have to with these
-methods directly they will only be withd internally by some basic
-hook and utility functions):
+methods directly they will only be used internally by some basic
+handler and utility functions):
 
 ```typescript
 type Ctrl<P extends Props = {}> = {
@@ -90,15 +90,15 @@ type Ctrl<P extends Props = {}> = {
   getProps(): P,
   isInitialized(): boolean,
   isMounted(): boolean,
-  refresh(runOnceBeforeRender?: () => void): void,
+  refresh(runOnceBeforeRender?: Action): void,
   getContextValue<T>(context: Context<T>): T,
-  afterMount(subscriber: Subscriber): void,
-  afterUpdate(subscriber: Subscriber): void,
-  beforeUnmount(subscriber: Subscriber): void,
+  afterMount(action: Action): void,
+  afterUpdate(action: Action): void,
+  beforeUnmount(action: Action): void,
 }
 
 type Props = Record<string, any>
-type Subscriber = () => void
+type Action = () => void
 type Context<T> = Preact.Context<T>
 ```
 
@@ -144,19 +144,21 @@ render(<Counter/>, document.getElementById('app'))
 ### Utility functions
 
 - `isMounted(c)`
-- `forceUpdate(c)`
+- `refresh(c)`
 - `getContextValue(c, context, defaultValue?)`
 - `asRef(valueOrRef)`
 - `toRef(getter)`
 
-### Hooks
+### Handlers
 
+- `withProps(c, defaultProps?)`
 - `withState(c, initialState)`
 - `withValue(c, initialCount)`
 - `withMemo(c, calculation, () => dependencies)`
 - `withContext(c, context)`
 - `withEffect(c, action, () => dependencies)`
 - `withInterval(c, action, milliseconds)`
+- `withPromise(c, () => getPromise)`
 
 ## Project state
 
