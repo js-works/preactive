@@ -1,7 +1,4 @@
-//import ObservableSlim from 'observable-slim'
-import onChange from 'on-change'
 import { asRef } from './utils'
-
 
 export function hook(name, func) {
   function ret() {

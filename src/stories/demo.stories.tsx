@@ -1,8 +1,8 @@
+/** @jsx h */
 import { h, createContext } from 'preact'
-import * as Spec from 'js-spec/validators'
 
 import {
-  statefulComponent, useContext, useEffect, useInterval, useMemo, useValue,
+  stateful, useContext, useEffect, useInterval, useMemo, useValue,
   toRef, useProps, useState
 } from '../main'
 
@@ -18,7 +18,7 @@ export const contextDemo = () => <ContextDemo/>
 
 // === Counter demo ==================================================
 
-const CounterDemo = statefulComponent('CounterDemo', c => {
+const CounterDemo = stateful('CounterDemo', c => {
   const
     props = useProps(c, {
       initialCount: 0,
@@ -27,7 +27,7 @@ const CounterDemo = statefulComponent('CounterDemo', c => {
 
     [count, setCount] = useValue(c, props.initialCount),
     onIncrement = () => setCount(it => it + 1),
-    onInput = ev => setCount(ev.currentTarget.valueAsNumber)
+    onInput = (ev: any) => setCount(ev.currentTarget.valueAsNumber) // TODO
 
   useEffect(c, () => {
     console.log(`Value of "${props.label}" is now ${count.value}`)
@@ -44,7 +44,7 @@ const CounterDemo = statefulComponent('CounterDemo', c => {
 
 // === Clock demo ====================================================
 
-const ClockDemo = statefulComponent('ClockDemo', c => {
+const ClockDemo = stateful('ClockDemo', c => {
   const time = useTime(c)
 
   return () =>
@@ -70,7 +70,7 @@ function useTime(c) {
 
 // === Memo demo =====================================================
 
-const MemoDemo = statefulComponent('MemoDemo', c => {
+const MemoDemo = stateful('MemoDemo', c => {
   const
     [state, setState] = useState(c, { count: 0 }),
     onButtonClick = () => setState({ count: state.count + 1 }),
@@ -94,7 +94,7 @@ const MemoDemo = statefulComponent('MemoDemo', c => {
 
 // === Interval demo =================================================
 
-const IntervalDemo = statefulComponent('IntervalDemo', c => {
+const IntervalDemo = stateful('IntervalDemo', c => {
   const
     [state, setState] = useState(c, {
       count: 0,
@@ -141,7 +141,7 @@ const translations = {
 
 const LocaleCtx = createContext('en')
 
-const ContextDemo = statefulComponent('ContextDemo', c => {
+const ContextDemo = stateful('ContextDemo', c => {
   const
     [state, setState] = useState(c, { locale: 'en' }),
     onLocaleChange = ev =>setState({ locale: ev.target.value })
@@ -162,7 +162,7 @@ const ContextDemo = statefulComponent('ContextDemo', c => {
   )
 })
 
-const LocaleText = statefulComponent('LocaleText', c => {
+const LocaleText = stateful('LocaleText', c => {
   const
     props = useProps(c),
     locale = useContext(c, LocaleCtx)

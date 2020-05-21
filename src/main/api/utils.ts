@@ -1,14 +1,17 @@
+import { Context, Ref } from 'preact'
+import Ctrl from './types/Ctrl'
+
 // --- asRef ---------------------------------------------------------
 
-export function asRef(arg) {
-  return arg && Object.prototype.hasOwnProperty.call(arg, 'current')
-    ? arg
-    : { current: arg }
+export function asRef<T>(valueOrRef: T | Ref<T>): Ref<T> {
+  return valueOrRef && Object.prototype.hasOwnProperty.call(valueOrRef, 'current')
+    ? valueOrRef 
+    : { current: valueOrRef as T }
 } 
 
 // --- toRef ---------------------------------------------------------
 
-export function toRef(getter) {
+export function toRef<T>(getter: () => T) {
   const ref = {}
 
   Object.defineProperty(ref, 'current', {
@@ -24,19 +27,19 @@ export function toRef(getter) {
 
 // --- isMounted -----------------------------------------------------
 
-export function isMounted(c) {
+export function isMounted(c: Ctrl) {
   return c.isMounted()
 }
 
 // --- refresh ---------------------------------------------------
 
-export function refresh(c) {
+export function refresh(c: Ctrl) {
   c.refresh()
 }
 
 // --- getContextValue -----------------------------------------------
 
-export function getContextValue(c, ctx, defaultValue) {
+export function getContextValue<T>(c: Ctrl, ctx: Context<T>, defaultValue: T) {
   let ret = c.getContextValue(ctx)
 
   if (ret === undefined) {
