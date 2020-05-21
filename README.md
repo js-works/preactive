@@ -32,12 +32,15 @@ npm run storybook
 
 ```jsx
 import { h, render } from 'preact'
-import { statelessComponent } from 'js-preactive'
+import { stateless } from 'js-preactive'
 
-const HelloWorld = statelessComponent('HelloWorld', props => {
+const HelloWorld = stateless('HelloWorld', ({
+  salutation = 'Hello',
+  name = 'world'
+}) => {
   return (
     <div>
-      {props.salutation || 'Hello'}, {props.name || 'world'}
+      {salutation}, {name}
     </div>
   )
 })
@@ -47,11 +50,19 @@ const HelloWorld = statelessComponent('HelloWorld', props => {
 
 ```jsx
 import { h, render } from 'preact'
-import { statefulComponent, useState } from 'js-preactive'
+import { stateful, useProps, useState } from 'js-preactive'
 
-const Counter = statefulComponent('Counter', (c, props) => {
+const Counter = stateful('Counter', c => {
   const
-    [state, setState] = useState(c, { count: props.initialCount || 0 }),
+    props = useProps(c, {
+      initialCount: 0,
+      label: 'Counter'
+    }),
+
+    [state, setState] = useState(c, {
+      count: props.initialCount
+    }),
+
     onIncrement = () => setState('count', it => it + 1)
 
   return () =>

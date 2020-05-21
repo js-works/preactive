@@ -1,10 +1,10 @@
 {
   "name": "js-preactive",
-  "version": "0.0.31",
+  "version": "0.0.32",
   "description": "",
   "main": "index.js",
   "module": "dist/js-preactive.esm.producion.js",
-  "types": "./src/main/index.d.ts",
+  "types": "./dist/types/index.d.ts",
   "unpkg": "dist/js-preactive.umd.production.js",
   "files": [
     "index.js",

@@ -79,9 +79,9 @@ export function stateless<P extends Props = {}>(
 
 // --- stateful ------------------------------------------------------
 
-export function stateful<P extends Props>(
+export function stateful<P extends Props = {}>(
   displayName: string,
-  init: (c: Ctrl<Props>) => (props: P) => VNode
+  init: (c: Ctrl<P>) => (props: P) => VNode
 ): ComponentType<P> {
   if (process.env.NODE_ENV === 'development' as any) {
     let errorMsg
@@ -102,7 +102,7 @@ export function stateful<P extends Props>(
     }
   }
 
-  class CustomComponent<P extends Props> extends PreactComponent {
+  class CustomComponent extends PreactComponent<P>{
     constructor(props: P) {
       super(props)
       this.props = props

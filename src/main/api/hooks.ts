@@ -1,8 +1,16 @@
+import { Context } from 'preact'
 import { asRef } from './utils'
+import Ctrl from './types/Ctrl'
+import Props from './types/Props'
+import Action from '../internal/types/Action'
+import ValueOrRef from './types/ValueOrRef'
 
-export function hook(name, func) {
+export function hook<P extends Props, A extends [Ctrl<P>, ...any[]], R>(
+  name: string,
+  func: (...args: A) => R
+ ): (...args: A) => R {
   function ret() {
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === 'development' as any) {
       const c = arguments[0]
 
       if (!c || typeof c !== 'object' || typeof c.isInitialized !== 'function') {
@@ -13,7 +21,7 @@ export function hook(name, func) {
       }
     }
 
-    return func.apply(null, arguments)
+    return func.apply(null, arguments as any)
   }
 
   Object.defineProperty(ret, 'name', {
@@ -25,7 +33,10 @@ export function hook(name, func) {
 
 // --- useProps ------------------------------------------------------
 
-export const useProps = hook('useProps', (c, defaultProps) => {
+export const useProps = hook('useProps', function <P extends Props = {}, D extends Partial<P> = {}>( // TODO
+  c: Ctrl<P>,
+  defaultProps?: D
+): P & D {
   const props = Object.assign({}, defaultProps, c.getProps())
 
   c.beforeUpdate(() => {
@@ -40,13 +51,16 @@ export const useProps = hook('useProps', (c, defaultProps) => {
 })
 
 // --- useValue ------------------------------------------------------
-export const useValue = hook('useValue', (c, initialValue) => {
-let nextValue = initialValue
+
+export const useValue = hook('useValue',  function <T>(c: Ctrl, initialValue: T):
+  [{ value: T }, (updater: (T | ((value: T) => T))) => void]
+{
+  let nextValue = initialValue
   
   const
     value = { value: initialValue },
   
-    setValue = updater => {
+    setValue = (updater: any) => { // TODO
       nextValue = typeof updater === 'function'
         ? updater(nextValue)
         : updater
@@ -56,20 +70,30 @@ let nextValue = initialValue
       })
     }
 
-  return [value, setValue]
+  return [value, setValue as any] // TODO
 })
 
 // --- useState ------------------------------------------------------
 
-export const useState = hook('useState', (c, initialState) => {
+type StateUpdater<T extends Record<string, any>> = {
+  (newState: Partial<T>): void,
+  (stateUpdate: (oldState: T) => Partial<T>): void,
+  (key: keyof T, newValue: T[typeof key]): void,
+  (key: keyof T, valueUpdate: (oldValue: T[typeof key]) => T[typeof key]): void
+}
+
+export const useState = hook('useState', function <T extends Record<string, any>>(
+  c: Ctrl,
+  initialState: T
+): [T, StateUpdater<T>] {
   let
-    nextState,
+    nextState: any, // TODO
     mergeNecessary = false
 
   const
     state = { ...initialState },
 
-    setState = (arg1, arg2) => {
+    setState = (arg1: any, arg2: any) => {
       mergeNecessary = true
 
       if (typeof arg1 === 'string') {
@@ -93,22 +117,26 @@ export const useState = hook('useState', (c, initialState) => {
 
   nextState = { ...state }
 
-  return [state, setState]
+  return [state, setState as any] // TODO
 })
 
 // --- useMemo -------------------------------------------------------
 
 // TODO - this is not really optimized, is it?
 
-export const useMemo = hook('useMemo', (c, getValue, getDeps) => {
-  let oldDeps, value
+export const useMemo = hook('useMemo', function <T, A extends any[], G extends () => A>(
+  c: Ctrl,
+  getValue: (...args: ReturnType<G>) => T,
+  getDeps: G
+) {
+  let oldDeps: any[], value: T
 
   const memo = {
     get value() {
       const newDeps = getDeps()
 
       if (!oldDeps || !isEqualArray(oldDeps, newDeps)) {
-        value = getValue.call(null, newDeps)
+        value = getValue.apply(null, newDeps as any) // TODO
       }
 
       oldDeps = newDeps
@@ -121,25 +149,28 @@ export const useMemo = hook('useMemo', (c, getValue, getDeps) => {
 
 // --- useContext ----------------------------------------------------
 
-export const useContext = hook('useContext', (c, context) => {
-
-
+export const useContext = hook('useContext', function <T>(
+  c: Ctrl,
+  context: Context<T>
+): { value: T } {
   return {
     get value() {
       return c.getContextValue(context) 
     }
   }
-
-  return ret
 })
 
 // --- useEffect -----------------------------------------------------
 
-export const useEffect = hook('useEffect', (c, action, getDeps) => {
+export const useEffect = hook('useEffect', function (
+  c: Ctrl,
+  action: () => void | undefined | null | (() => void),
+  getDeps?: null | (() => any[])
+): void {
   let
-    oldDeps = null,
-    cleanup
-
+    oldDeps: (any[] | null) = null,
+    cleanup: Action | null | undefined | void
+  
   if (getDeps === null) {
     c.afterMount(() => { cleanup = action() })
     c.beforeUnmount(() => { cleanup && cleanup() }) 
@@ -148,7 +179,7 @@ export const useEffect = hook('useEffect', (c, action, getDeps) => {
       let needsAction = getDeps === undefined
 
       if (!needsAction) {
-        const newDeps = getDeps()
+        const newDeps = getDeps!()
 
         needsAction = oldDeps === null || newDeps ===  null || !isEqualArray(oldDeps, newDeps)
         oldDeps = newDeps
@@ -170,7 +201,11 @@ export const useEffect = hook('useEffect', (c, action, getDeps) => {
 
 // --- useInterval ---------------------------------------------------
 
-export const useInterval = hook('useInterval', (c, callback, delay) => {
+export const useInterval = hook('useInterval', (
+  c,
+  callback: ValueOrRef<() => void>,
+  delay: ValueOrRef<number>
+) => {
   const
     callbackRef = asRef(callback),
     delayRef = asRef(delay)
@@ -184,8 +219,9 @@ export const useInterval = hook('useInterval', (c, callback, delay) => {
 
 // --- locals --------------------------------------------------------
 
-function isEqualArray(arr1, arr2) {
-  let ret = Array.isArray(arr1) && Array.isArray(arr2) && arr1.length === arr2.length
+function isEqualArray(arr1: any[], arr2: any[]) {
+  let ret =
+    Array.isArray(arr1) && Array.isArray(arr2) && arr1.length === arr2.length
 
   if (ret) {
     for (let i = 0; i < arr1.length; ++i) {

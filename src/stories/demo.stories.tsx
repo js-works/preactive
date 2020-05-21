@@ -2,7 +2,7 @@
 import { h, createContext } from 'preact'
 
 import {
-  stateful, useContext, useEffect, useInterval, useMemo, useValue,
+  stateful, hook, useContext, useEffect, useInterval, useMemo, useValue,
   toRef, useProps, useState
 } from '../main'
 
@@ -58,7 +58,7 @@ function getTime() {
   return new Date().toLocaleTimeString()
 }
 
-function useTime(c) {
+const useTime = hook('useTime', c => {
   const [time, setTime] = useValue(c, getTime())
 
   useInterval(c, () => {
@@ -66,7 +66,7 @@ function useTime(c) {
   }, 1000)
 
   return time
-}
+})
 
 // === Memo demo =====================================================
 
@@ -144,7 +144,7 @@ const LocaleCtx = createContext('en')
 const ContextDemo = stateful('ContextDemo', c => {
   const
     [state, setState] = useState(c, { locale: 'en' }),
-    onLocaleChange = ev =>setState({ locale: ev.target.value })
+    onLocaleChange = (ev: any) =>setState({ locale: ev.target.value })
 
   return () => (
     <LocaleCtx.Provider value={state.locale}>
@@ -162,14 +162,18 @@ const ContextDemo = stateful('ContextDemo', c => {
   )
 })
 
-const LocaleText = stateful('LocaleText', c => {
+type LocaleTextProps = {
+  id: string
+}
+
+const LocaleText = stateful<LocaleTextProps>('LocaleText', c => {
   const
     props = useProps(c),
     locale = useContext(c, LocaleCtx)
 
   return () => (
     <p>
-      { translations[locale.value][props.id] }
+      { (translations as any)[locale.value][props.id] } { /* // TODO */ } 
     </p>
   )
 })

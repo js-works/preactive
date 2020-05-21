@@ -1,18 +1,18 @@
-import { Context, Ref } from 'preact'
+import { Context } from 'preact'
 import Ctrl from './types/Ctrl'
 
 // --- asRef ---------------------------------------------------------
 
-export function asRef<T>(valueOrRef: T | Ref<T>): Ref<T> {
-  return valueOrRef && Object.prototype.hasOwnProperty.call(valueOrRef, 'current')
-    ? valueOrRef 
-    : { current: valueOrRef as T }
-} 
+export function asRef<T>(arg: { current: T } | T): { current: T } {
+  return (arg instanceof RefClass)
+    ? arg
+    : new RefClass(arg)
+}
 
 // --- toRef ---------------------------------------------------------
 
-export function toRef<T>(getter: () => T) {
-  const ref = {}
+export function toRef<T>(getter: () => T): { current: T } {
+  const ref = Object.create(RefClass.prototype)
 
   Object.defineProperty(ref, 'current', {
     enumerable: true,
@@ -47,4 +47,14 @@ export function getContextValue<T>(c: Ctrl, ctx: Context<T>, defaultValue: T) {
   }
 
   return ret
+}
+
+// --- locals --------------------------------------------------------
+
+class RefClass<T> {
+  current: T
+  
+  constructor(initialValue: T) {
+    this.current = initialValue
+  }
 }
