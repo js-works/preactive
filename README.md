@@ -30,7 +30,7 @@ npm run storybook
 
 ### Stateless components
 
-```jsx
+```tsx
 import { h, render } from 'preact'
 import { stateless } from 'js-preactive'
 
@@ -55,7 +55,7 @@ render(<HelloWorld/>, document.getElementById('app'))
 
 ### Stateful components
 
-```jsx
+```tsx
 import { h, render } from 'preact'
 import { stateful, withProps, withState } from 'js-preactive'
 
@@ -94,7 +94,7 @@ The type of the component controller is currently the following
 methods directly they will only be used internally by some basic
 handler and utility functions):
 
-```typescript
+```ts
 type Ctrl<P extends Props = {}> = {
   getDisplayName(): string,
   getProps(): P,
@@ -114,7 +114,7 @@ type Context<T> = Preact.Context<T>
 
 ### Additional example - showing some more features
 
-```jsx
+```tsx
 import { h, render } from 'preact'
 import { stateful, withEffect, withProps, withValue } from 'js-preactive'
 
