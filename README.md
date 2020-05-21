@@ -106,9 +106,9 @@ type Context<T> = Preact.Context<T>
 
 ```jsx
 import { h, render } from 'preact'
-import { statefulComponent, withEffect, withProps, withValue } from 'js-preactive'
+import { stateful, withEffect, withProps, withValue } from 'js-preactive'
 
-const Counter = statefulComponent('Counter', c => {
+const Counter = stateful('Counter', c => {
   const
     props = withProps(c, { initialCount: 0, label: 'Counter' }),
     [count, setCount] = withValue(c, props.initialCount),
@@ -138,8 +138,8 @@ render(<Counter/>, document.getElementById('app'))
 
 ### Component definition
 
-- `statelessComponent(displayName, render: props => vnode)`
-- `statefulComponent(displayName, init: c => props => vnode)`
+- `stateless(displayName, render: props => vnode)`
+- `stateful(displayName, init: c => props => vnode)`
 
 ### Utility functions
 
