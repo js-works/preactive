@@ -52,11 +52,11 @@ render(<HelloWorld/>, document.getElementById('app'))
 
 ```jsx
 import { h, render } from 'preact'
-import { stateful, useProps, useState } from 'js-preactive'
+import { stateful, withProps, withState } from 'js-preactive'
 
 const Counter = stateful('Counter', c => {
   const
-    props = useProps(c, {
+    props = withProps(c, {
       initialCount: 0,
       label: 'Counter'
     }),
@@ -80,8 +80,8 @@ render(<Counter/>, document.getElementById('app'))
 In the above examples the `c` is a so called component controller
 (some kind of representation for the component instance).
 The type of the component controller is currently the following
-(please be aware that "normal" developers will never have to use these
-methods directly they will only be used internally by some basic
+(please be aware that "normal" developers will never have to with these
+methods directly they will only be withd internally by some basic
 hook and utility functions):
 
 ```typescript
@@ -114,13 +114,13 @@ const Counter = statefulComponent('Counter', c => {
     [count, setCount] = withValue(c, props.initialCount),
     onIncrement = () => setCount(it => it + 1)
 
-  useEffect(c, () => {
+  withEffect(c, () => {
     console.log(`"${props.label}" has been mounted`)
 
     return () => console.log(`Unmounting "${props.label}"`)
   }, null)
 
-  useEffect(c, () => {
+  withEffect(c, () => {
     console.log(`Value of "${props.label}": ${count.value}`)
   }, () => [count.value])
 
@@ -151,12 +151,12 @@ render(<Counter/>, document.getElementById('app'))
 
 ### Hooks
 
-- `useState(c, initialState)`
-- `useValue(c, initialCount)`
-- `useMemo(c, calculation, () => dependencies)`
-- `useContext(c, context)`
-- `useEffect(c, action, () => dependencies)`
-- `useInterval(c, action, milliseconds)`
+- `withState(c, initialState)`
+- `withValue(c, initialCount)`
+- `withMemo(c, calculation, () => dependencies)`
+- `withContext(c, context)`
+- `withEffect(c, action, () => dependencies)`
+- `withInterval(c, action, milliseconds)`
 
 ## Project state
 
