@@ -1,5 +1,5 @@
 /** @jsx h */
-import { h, createContext, RefObject } from 'preact'
+import { h, createContext, Ref } from 'preact'
 
 import {
   asRef, stateful, handler, refresh, withContext, withEffect, withInterval, withMemo,
@@ -60,7 +60,7 @@ type ComplexCounterProps = {
   initialCount?: number,
   label?: string,
 
-  componentRef?: RefObject<{
+  componentRef?: Ref<{
     reset(n: number): void
   }>
 }

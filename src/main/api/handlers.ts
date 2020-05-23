@@ -1,4 +1,4 @@
-import { Context, RefObject, RefCallback } from 'preact'
+import { Context, Ref } from 'preact'
 import { asRef } from './utils'
 import Ctrl from './types/Ctrl'
 import Props from './types/Props'
@@ -217,20 +217,43 @@ export const withEffect = handler('withEffect', function (
 // --- withMethods ---------------------------------------------------
 
 type MethodsOf<R> =
-  R extends RefObject<infer T>
+  R extends Ref<infer T>
     ? T
     : never
+
+function updateRef<T>(ref: Ref<T> | undefined, value: T | null): void {
+  if (ref) {
+    if (typeof ref === 'function') {
+      ref(value)
+    } else {
+      ref.current = value
+    }
+  }
+}
 
 export const withMethods = handler('withMethods', function<P extends Props, K extends keyof P> (
   c: Ctrl<P>,
   key: K,
   methods: MethodsOf<P[K]>
 ) {
-  const ref = c.getProps()[key]
+  let ref: Ref<MethodsOf<P[K]>> = c.getProps()[key]
 
-  if (ref) {
-    ref.current = methods
-  }
+  updateRef(ref, methods)
+
+
+  c.beforeUpdate(() => {
+    const newRef = c.getProps()[key]
+
+    if (newRef !== ref) {
+      updateRef(ref, null)
+      ref = newRef
+      updateRef(ref, methods)
+    }
+  })
+
+  c.beforeUnmount(() => {
+    updateRef(ref, null)
+  })
 })
 
 // --- withInterval ---------------------------------------------------

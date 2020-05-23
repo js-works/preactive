@@ -174,7 +174,7 @@ export function stateful<P extends Props = {}>(
         }
 
         beforeUpdateNotifier.notify()
-console.log(displayName, (this as any))
+
         return render(this.props as any) // TODO
       }
     }
