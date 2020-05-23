@@ -1,6 +1,9 @@
 import { Component, options, VNode, Context, Component as PreactComponent, ComponentType, FunctionComponent } from 'preact'
+import {} from 'preact/compat'
 import Ctrl from './types/Ctrl'
 import Props from './types/Props'
+
+const oldDiffHook = (options as any)._diff;
 
 // Brrrr, this is horrible as hell - please fix asap!!!!
 const
@@ -120,7 +123,7 @@ export function stateful<P extends Props = {}>(
 
         ctrl: Ctrl<P> = {
           getDisplayName: () => displayName,
-          getProps: () => this.props as P,
+          getProps: () => this.props,
           isMounted: () => mounted,
           isInitialized: () => initialized,
 
@@ -171,7 +174,7 @@ export function stateful<P extends Props = {}>(
         }
 
         beforeUpdateNotifier.notify()
-
+console.log(displayName, (this as any))
         return render(this.props as any) // TODO
       }
     }
@@ -182,6 +185,7 @@ export function stateful<P extends Props = {}>(
   }
 
   CustomComponent.prototype = Object.create(Component.prototype)
+
   setPropValue(CustomComponent, 'name', displayName)
   setPropValue(CustomComponent, 'displayName', displayName)
 

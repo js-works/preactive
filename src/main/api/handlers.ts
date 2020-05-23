@@ -1,4 +1,4 @@
-import { Context } from 'preact'
+import { Context, RefObject, RefCallback } from 'preact'
 import { asRef } from './utils'
 import Ctrl from './types/Ctrl'
 import Props from './types/Props'
@@ -37,17 +37,22 @@ type KeysOfOptionals<P extends Props> = Exclude<{
   [K in keyof P]: undefined extends P[K] ? K : never
 }[keyof P], undefined>
 
-type DefaultProps<P extends Props> =
-  { [K in KeysOfOptionals<P>]?: P[K] }
+type PickDefaultProps<P extends Props> = {
+  [K in KeysOfOptionals<P>]?: P[K]
+}
 
-type LimitToOptionalKeys<T, P> = 
-  keyof T extends KeysOfOptionals<P> ? T : never
+type ValidateShape<T, Shape> =
+  T extends Shape
+    ? Exclude<keyof T, keyof Shape> extends never
+    ? T
+    : never
+    : never
 
-export const withProps = handler('withProps', function <P extends Props = {}, D extends DefaultProps<P> = {}>( // TODO
+export const withProps = handler('withProps', function <P extends Props, D = undefined>(
   c: Ctrl<P>,
-  defaultProps?: LimitToOptionalKeys<D, P>
-): P & D {
-  const props = Object.assign({}, defaultProps, c.getProps())
+  defaultProps?: D 
+): D extends undefined ? P : P & ValidateShape<D, PickDefaultProps<P>> {
+  const props: any = Object.assign({}, defaultProps, c.getProps()) // TODO
 
   c.beforeUpdate(() => {
     for (const propName in props) {
@@ -206,6 +211,25 @@ export const withEffect = handler('withEffect', function (
   } else {
     throw new TypeError(
       '[withEffect] Third argument must either be undefined, null or a function')
+  }
+})
+
+// --- withMethods ---------------------------------------------------
+
+type MethodsOf<R> =
+  R extends RefObject<infer T>
+    ? T
+    : never
+
+export const withMethods = handler('withMethods', function<P extends Props, K extends keyof P> (
+  c: Ctrl<P>,
+  key: K,
+  methods: MethodsOf<P[K]>
+) {
+  const ref = c.getProps()[key]
+
+  if (ref) {
+    ref.current = methods
   }
 })
 

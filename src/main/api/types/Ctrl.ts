@@ -1,4 +1,4 @@
-import { Context } from 'preact'
+import { Component, Context } from 'preact'
 import Props from './Props'
 
 export default Ctrl

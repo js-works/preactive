@@ -1,8 +1,9 @@
 /** @jsx h */
-import { h, createContext } from 'preact'
+import { h, createContext, RefObject } from 'preact'
 
 import {
-  stateful, handler, refresh, withContext, withEffect, withInterval, withMemo, withPromise, withValue,
+  asRef, stateful, handler, refresh, withContext, withEffect, withInterval, withMemo,
+  withMethods, withPromise, withValue,
   toRef, withProps, withState
 } from '../main'
 
@@ -10,21 +11,26 @@ export default {
   title: 'Demos'
 }
 
-export const counterDemo = () => <CounterDemo/>
+export const simpleCounterDemo = () => <SimpleCounterDemo/>
+export const complexCounterDemo = () => <ComplexCounterDemo/>
 export const clockDemo = () => <ClockDemo/>
 export const memoDemo = () => <MemoDemo/>
 export const intervalDemo = () => <IntervalDemo/>
 export const contextDemo = () => <ContextDemo/>
 export const promiseDemo = () => <PromiseDemo/>
 
-// === Counter demo ==================================================
+// === Simple counter demo ===========================================
 
-type CounterProps = {
+type SimpleCounterProps = {
   initialCount?: number,
-  label?: string
+  label?: string,
+  
+  ref?: {
+    reset(n: number): void
+  }
 }
 
-const CounterDemo = stateful<CounterProps>('CounterDemo', c => {
+const SimpleCounterDemo = stateful<SimpleCounterProps>('SimpleCounterDemo', c => {
   const
     props = withProps(c, {
       initialCount: 0,
@@ -41,10 +47,63 @@ const CounterDemo = stateful<CounterProps>('CounterDemo', c => {
 
   return () =>
     <div>
-      <h3>Counter demo 1:</h3>
+      <h3>Simple counter demo:</h3>
       <label>{props.label}: </label>
       <input type="number" value={count.value} onInput={onInput} />
       <button onClick={onIncrement}>{count.value}</button>
+    </div>
+})
+
+// === Complex counter demo ==========================================
+
+type ComplexCounterProps = {
+  initialCount?: number,
+  label?: string,
+
+  componentRef?: RefObject<{
+    reset(n: number): void
+  }>
+}
+
+const ComplexCounter = stateful<ComplexCounterProps>('ComplexCounter', c => {
+  const
+    props = withProps(c, {
+      initialCount: 0,
+      label: 'Counter'
+    }),
+
+    [count, setCount] = withValue(c, props.initialCount),
+    onIncrement = () => setCount(it => it + 1),
+    onDecrement = () => setCount(it => it - 1)
+  
+  withMethods(c, 'componentRef', {
+     reset(n: number) {
+      setCount(n)
+    }
+  })
+  
+  return () =>
+    <div>
+      <h3>Complex counter demo:</h3>
+      <label>{props.label}: </label>
+      <button onClick={onDecrement}>-</button>
+      {` ${count.value} `}
+      <button onClick={onIncrement}>+</button>
+    </div>
+})
+
+const ComplexCounterDemo = stateful('ComplexCounterDemo', c => {
+  const
+    counterRef: any = asRef<ComplexCounterProps['componentRef'] | null>(null), // TODO
+    onResetToZeroClick = () => counterRef.current.reset(0),
+    onResetToOneHundredClick = () => counterRef.current.reset(100)
+
+  return () =>
+    <div>
+      <ComplexCounter componentRef={counterRef}/>
+      <br/>
+      <button onClick={onResetToZeroClick}>Reset to 0</button>
+      <button onClick={onResetToOneHundredClick}>Reset to 100</button>
     </div>
 })
 
