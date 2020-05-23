@@ -77,7 +77,7 @@ const ComplexCounter = stateful<ComplexCounterProps>('ComplexCounter', c => {
     onDecrement = () => setCount(it => it - 1)
   
   withMethods(c, 'componentRef', {
-     reset(n: number) {
+     reset(n) {
       setCount(n)
     }
   })
