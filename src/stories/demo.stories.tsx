@@ -19,7 +19,12 @@ export const promiseDemo = () => <PromiseDemo/>
 
 // === Counter demo ==================================================
 
-const CounterDemo = stateful('CounterDemo', c => {
+type CounterProps = {
+  initialCount?: number,
+  label?: string
+}
+
+const CounterDemo = stateful<CounterProps>('CounterDemo', c => {
   const
     props = withProps(c, {
       initialCount: 0,

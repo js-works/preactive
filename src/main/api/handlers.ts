@@ -33,9 +33,19 @@ export function handler<P extends Props, A extends [Ctrl<P>, ...any[]], R>(
 
 // --- withProps ------------------------------------------------------
 
-export const withProps = handler('withProps', function <P extends Props = {}, D extends Partial<P> = {}>( // TODO
+type KeysOfOptionals<P extends Props> = Exclude<{
+  [K in keyof P]: undefined extends P[K] ? K : never
+}[keyof P], undefined>
+
+type DefaultProps<P extends Props> =
+  { [K in KeysOfOptionals<P>]?: P[K] }
+
+type LimitToOptionalKeys<T, P> = 
+  keyof T extends KeysOfOptionals<P> ? T : never
+
+export const withProps = handler('withProps', function <P extends Props = {}, D extends DefaultProps<P> = {}>( // TODO
   c: Ctrl<P>,
-  defaultProps?: D
+  defaultProps?: LimitToOptionalKeys<D, P>
 ): P & D {
   const props = Object.assign({}, defaultProps, c.getProps())
 

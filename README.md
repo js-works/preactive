@@ -168,7 +168,7 @@ render(<Counter/>, document.getElementById('app'))
 
 - `withProps(c, defaultProps?)`
 - `withState(c, initialState)`
-- `withValue(c, initialCount)`
+- `withValue(c, initialValue)`
 - `withMemo(c, calculation, getDependencies)`
 - `withContext(c, context)`
 - `withEffect(c, action, getDependencies? | null)`
