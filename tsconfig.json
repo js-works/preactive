@@ -1,42 +1,27 @@
 {
   "compilerOptions": {
     "allowJs": true,
-    "target": "ES5",
+    "target": "es2022",
+    "moduleResolution": "Node",
     "strict": true,
-    "strictNullChecks": true,
     "jsx": "react",
     "jsxFactory": "h",
+    "jsxFragmentFactory": "Fragment",
     "allowSyntheticDefaultImports": true,
     "noImplicitAny": true,
     "removeComments": true,
     "preserveConstEnums": true,
     "downlevelIteration": true,
-    "sourceMap": false, 
-    "lib": ["es7", "dom"],
+    "sourceMap": false,
+    "lib": ["es2022", "dom"],
     "esModuleInterop": true,
     "baseUrl": ".",
     "skipLibCheck": true,
-    
-    "paths": {
-    },
-    
-    "typeRoots": [
-      "node_modules/@types"
-    ],
-
-    "types": [
-      "node", "mocha", "chai"
-    ]
+    "paths": {},
+    "typeRoots": ["node_modules/@types"],
+    "types": ["node", "mocha", "chai"]
   },
-  "files": [
-    "src/main/index.ts",
-  ],
-
-  "include": [
-    "./src/**/*.ts*"
-  ],
-
-  "exclude": [
-    "node_modules"
-  ]
+  "files": ["src/main/index.ts", "src/stories/demo.stories.tsx"],
+  "include": ["./src/**/*.ts*", "src/stories/demo.stories.tsx"],
+  "exclude": ["node_modules"]
 }
