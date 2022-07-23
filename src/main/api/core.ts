@@ -199,7 +199,7 @@ class BaseComponent<P extends Props> extends PreactComponent<P> {
 
     if (this.#stateful) {
       if (this.#mounted) {
-        this.#emit!('beforeUpdate');
+        this.#emit && this.#emit!('beforeUpdate');
       }
 
       return this.#render!();
@@ -219,7 +219,7 @@ function getCtrl(): Ctrl {
   return getCurrentCtrl();
 }
 
-function render(content: VNode, container: HTMLElement | string) {
+function render(content: VNode, container: Element | string) {
   const target =
     typeof container === 'string'
       ? document.querySelector(container)

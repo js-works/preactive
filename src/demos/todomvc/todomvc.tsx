@@ -1,17 +1,9 @@
 /** @jsx h */
-import { h, render, createRef, RefObject } from 'preact';
-
-import {
-  component,
-  getRefresher,
-  effect,
-  preset,
-  stateObj
-} from '../../main/index';
-
+import { createRef, h, RefObject } from 'preact';
+import { component, render } from '../../main/api/core';
+import { getRefresher, effect, stateObj } from '../../main/api/ext';
 import { defineMessages } from 'js-messages';
-import { createReducer, when } from 'js-reducers';
-import { update } from 'js-immutables';
+import { createReducer, on } from 'js-reducers';
 import { createStore } from 'redux';
 import { Router, Link } from 'preact-router';
 // @ts-ignore
@@ -39,7 +31,7 @@ const ENTER_KEY = 13;
 const ESC_KEY = 27;
 const STORAGE_KEY = 'todomvc::js-preactive';
 
-const TodoAct = defineMessages('todos', {
+const TodoAction = defineMessages('todos', {
   create: (title: string) => ({ title }),
   edit: (id: number, title: string) => ({ id, title }),
   destroy: (id: number) => ({ id }),
@@ -49,49 +41,40 @@ const TodoAct = defineMessages('todos', {
 });
 
 const todoReducer = createReducer({ todos: [] as Todo[] }, [
-  when(TodoAct.create, (state, { title }) =>
-    update(state, 'todos').push({
-      id: state.todos.reduce((max, todo) => Math.max(max, todo.id + 1), 0),
-      title,
-      completed: false
-    })
-  ),
+  on(TodoAction.create, (state, { title }) => {
+    const id = state.todos.reduce((max, todo) => Math.max(max, todo.id + 1), 0);
+    state.todos.push({ id, title, completed: false });
+  }),
 
-  when(TodoAct.edit, (state, { id, title }) =>
-    update(state, 'todos').mapFirst(
-      (todo) => todo.id === id,
-      (todo) => update(todo).set('title', title)
-    )
-  ),
+  on(TodoAction.edit, (state, { id, title }) => {
+    state.todos.find((it) => it.id === id)!.title = title;
+  }),
 
-  when(TodoAct.destroy, (state, { id }) =>
-    update(state, 'todos').removeFirst((todo) => todo.id === id)
-  ),
+  on(TodoAction.destroy, (state, { id }) => {
+    const idx = state.todos.findIndex((todo) => todo.id === id);
+    state.todos.splice(idx, 1);
+  }),
 
-  when(TodoAct.toggle, (state, { id, completed }) =>
-    update(state, 'todos').mapFirst(
-      (todo) => todo.id === id,
-      (todo) => update(todo).set('completed', completed)
-    )
-  ),
+  on(TodoAction.toggle, (state, { id, completed }) => {
+    const idx = state.todos.findIndex((todo) => todo.id === id);
+    state.todos[idx].completed = completed;
+  }),
 
-  when(TodoAct.toggleAll, (state, { completed }) =>
-    update(state, 'todos').map((todo) =>
-      update(todo).set('completed', completed)
-    )
-  ),
+  on(TodoAction.toggleAll, (state, { completed }) => {
+    state.todos.forEach((todo) => void (todo.completed = completed));
+  }),
 
-  when(TodoAct.clearCompleted, (state) =>
-    update(state, 'todos').remove((todo) => todo.completed)
-  )
+  on(TodoAction.clearCompleted, (state) => {
+    state.todos = state.todos.filter((todo) => !todo.completed);
+  })
 ]);
 
-const store = createStore(todoReducer, { todos: load() });
+const store = createStore(todoReducer, { todos: loadTodos() });
 const dispatch = store.dispatch;
 
 const Header = component('Header', () => {
   const [state, set] = stateObj({ title: '' });
-  const onInput = (ev: any) => set({ title: ev.target.value });
+  const onInput = (ev: any) => set.title(ev.target.value);
 
   const onKeyDown = (ev: any) => {
     if (ev.keyCode === ENTER_KEY) {
@@ -100,7 +83,7 @@ const Header = component('Header', () => {
 
       if (newTitle) {
         ev.preventDefault();
-        dispatch(TodoAct.create(newTitle));
+        dispatch(TodoAction.create(newTitle));
       }
     }
   };
@@ -132,13 +115,13 @@ const TodoItem = component('TodoItem')<{
     title: props.todo.title
   });
 
-  const onDestroyClick = () => dispatch(TodoAct.destroy(props.todo.id));
+  const onDestroyClick = () => dispatch(TodoAction.destroy(props.todo.id));
 
   const onToggleClick = (ev: any) =>
-    dispatch(TodoAct.toggle(props.todo.id, ev.target.checked));
+    dispatch(TodoAction.toggle(props.todo.id, ev.target.checked));
 
   const onDoubleClick = () => set.active(true);
-  const onInput = (ev: any) => set({ title: ev.target.value });
+  const onInput = (ev: any) => set.title(ev.target.value);
 
   const onBlur = (ev: any) => {
     const title = ev.target.value.trim();
@@ -146,9 +129,9 @@ const TodoItem = component('TodoItem')<{
     set({ active: false, title });
 
     if (title) {
-      dispatch(TodoAct.edit(props.todo.id, title));
+      dispatch(TodoAction.edit(props.todo.id, title));
     } else {
-      dispatch(TodoAct.destroy(props.todo.id));
+      dispatch(TodoAction.destroy(props.todo.id));
     }
   };
 
@@ -202,7 +185,9 @@ const Main = component('Main')<{
   filter: TodoFilter;
 }>((props) => {
   const onChange = () =>
-    dispatch(TodoAct.toggleAll(!props.todos.every((todo) => todo.completed)));
+    dispatch(
+      TodoAction.toggleAll(!props.todos.every((todo) => todo.completed))
+    );
 
   return () => {
     const completed = !props.todos.every((todo) => todo.completed),
@@ -274,7 +259,7 @@ const Footer = component('Footer')<{
   todos: Todo[];
   filter: TodoFilter;
 }>((props) => {
-  const onClearCompletedClick = () => dispatch(TodoAct.clearCompleted());
+  const onClearCompletedClick = () => dispatch(TodoAction.clearCompleted());
 
   return () => {
     const completed = props.todos.filter((todo) => todo.completed).length,
@@ -296,13 +281,13 @@ const Footer = component('Footer')<{
   };
 });
 
-function save(todos: Todo[]) {
+function saveTodos(todos: Todo[]) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
   } catch {}
 }
 
-function load() {
+function loadTodos() {
   try {
     try {
       const storedTodos = JSON.parse(localStorage.getItem(STORAGE_KEY) as any);
@@ -337,7 +322,7 @@ const App = component('App', () => {
   effect(
     () =>
       store.subscribe(() => {
-        save(store.getState().todos);
+        saveTodos(store.getState().todos);
         refresh();
       }),
     null
@@ -354,4 +339,4 @@ const App = component('App', () => {
 
 // --- main ----------------------------------------------------------
 
-render(<App />, document.getElementsByClassName('todoapp')[0]);
+render(<App />, document.querySelector('.todoapp')!);
