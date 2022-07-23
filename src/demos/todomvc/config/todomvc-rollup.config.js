@@ -1,9 +1,9 @@
-import resolve from '@rollup/plugin-node-resolve'
-import replace from '@rollup/plugin-replace'
-import commonjs from '@rollup/plugin-commonjs'
-import typescript from '@rollup/plugin-typescript'
-import serve from 'rollup-plugin-serve'
- 
+import resolve from '@rollup/plugin-node-resolve';
+import replace from '@rollup/plugin-replace';
+import commonjs from '@rollup/plugin-commonjs';
+import typescript from '@rollup/plugin-typescript';
+import serve from 'rollup-plugin-serve';
+
 export default {
   input: './src/demos/todomvc/todomvc.tsx',
   output: {
@@ -15,6 +15,7 @@ export default {
     resolve(),
     replace({
       exclude: 'node_modules/**',
+      preventAssignment: true,
 
       values: {
         'process.env.NODE_ENV': "'development'"
@@ -22,7 +23,7 @@ export default {
     }),
     typescript({
       sourceMap: true,
-      exclude: 'node_modules/**',
+      exclude: 'node_modules/**'
     }),
     serve({
       open: true,
@@ -30,4 +31,4 @@ export default {
       contentBase: ['src/demos/todomvc', 'build/todomvc']
     })
   ]
-}
+};

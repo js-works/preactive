@@ -1,22 +1,21 @@
-# js-preactive 
+# js-preactive
 
 A R&D project to evaluate an alternative API for developing components
-with Preact using an alternative to hook functions (called "handlers").<br>
+with Preact using an alternative to hook functions (called "extensions").<br>
 The main advantages of the new API are:
 
-- 0% magic
-- Does not make any trouble for the garbage collector
 - No rules of hooks
 - No special linter necessary
-- 100% accurately typeable - in the function type signature
-  of handler functions or function that generate handler functions etc.,
-  it will always be visible what we are dealing with.
+- 100% accurately typeable
+
+Be aware that this project is just for research purposes and
+is not meant to be used in production.
 
 ### Installation
 
 ```
 git clone https://github.com/js-works/js-preactive.git
-cd preactive
+cd js-preactive
 npm install
 ```
 
@@ -31,149 +30,120 @@ npm run storybook
 ### Stateless components
 
 ```tsx
-import { h, render } from 'preact'
-import { stateless } from 'js-preactive'
+import { h, render } from 'preact';
+import { component } from 'js-preactive';
 
-type HelloWorldProps = {
-  salutation?: string,
-  name?: string
-}
+const Greet = component('Greet')<{
+  salutation?: string;
+  name?: string;
+}>((props) => {
+  const { salutation = 'Hello', name = 'stranger' } = props;
 
-const HelloWorld = stateless<HelloWorldProps>('HelloWorld', ({
-  salutation = 'Hello',
-  name = 'world'
-}) => {
   return (
     <div>
-      {salutation}, {name}
+      {salutation}, {name}!
     </div>
-  )
-})
+  );
+});
 
-render(<HelloWorld/>, document.getElementById('app'))
+render(<HelloWorld />, document.querySelector('#app'));
 ```
 
 ### Stateful components
 
 ```tsx
-import { h, render } from 'preact'
-import { stateful, withProps, withState } from 'js-preactive'
+import { h, render } from 'preact';
+import { component } from 'js-preactive';
+import { preset, stateObj } from 'js-preactive/ext';
 
-type CounterProps = {
-  initialCount?: number,
-  label?: string
-}
+const Counter = component('Counter')<{
+  initialCount?: number;
+  label?: string;
+}>((p) => {
+  const props = preset(p, {
+    initialCount: 0,
+    label: 'Counter',
+  });
 
-const Counter = stateful<CounterProps>('Counter', c => {
-  const
-    props = withProps(c, {
-      initialCount: 0,
-      label: 'Counter'
-    }),
+  const [state, set] = stateObj({
+    count: props.initialCount,
+  });
 
-    [state, setState] = withState(c, {
-      count: props.initialCount
-    }),
+  const onIncrement = () => set.count((it) => it + 1);
 
-    onIncrement = () => setState('count', it => it + 1)
-
-  return () =>
+  return () => (
     <div>
       <label>{props.label}: </label>
       <button onClick={onIncrement}>{state.count}</button>
     </div>
-})
+  );
+});
 
-render(<Counter/>, document.getElementById('app'))
-```
-
-In the above examples the `c` is a so called component controller
-(some kind of representation for the component instance).
-The type of the component controller is currently the following
-(please be aware that "normal" developers will never have to with these
-methods directly they will only be used internally by some basic
-handler and utility functions):
-
-```ts
-type Ctrl<P extends Props = {}> = {
-  getDisplayName(): string,
-  getProps(): P,
-  isInitialized(): boolean,
-  isMounted(): boolean,
-  refresh(runOnceBeforeRender?: Action): void,
-  getContextValue<T>(context: Context<T>): T,
-  afterMount(action: Action): void,
-  afterUpdate(action: Action): void,
-  beforeUnmount(action: Action): void,
-}
-
-type Props = Record<string, any>
-type Action = () => void
-type Context<T> = Preact.Context<T>
+render(<Counter />, document.getElementById('app'));
 ```
 
 ### Additional example - showing some more features
 
 ```tsx
-import { h, render } from 'preact'
-import { stateful, withEffect, withProps, withValue } from 'js-preactive'
+import { h, render } from 'preact';
+import { component } from 'js-preactive';
+import { effect, onMount, preset, stateVal } from 'js-preactive/ext';
 
-type CounterProps = {
-  initialCount?: number,
-  label?: string
-}
+const Counter = component('Counter')<{
+  initialCount?: number;
+  label?: string;
+}>((p) => {
+  const props = preset(p, () => ({
+    initialCount: 0,
+    label: 'Counter',
+  }));
 
-const Counter = stateful<CounterProps>('Counter', c => {
-  const
-    props = withProps(c, { initialCount: 0, label: 'Counter' }),
-    [count, setCount] = withValue(c, props.initialCount),
-    onIncrement = () => setCount(it => it + 1)
+  const [getCount, setCount] = stateVal(props.initialCount);
+  const onIncrement = () => setCount((it) => it + 1);
 
-  withEffect(c, () => {
-    console.log(`"${props.label}" has been mounted`)
+  onMount(() => {
+    console.log(`"${props.label}" has been mounted`);
+  });
 
-    return () => console.log(`Unmounting "${props.label}"`)
-  }, null)
+  effect(
+    () => console.log(`Value of "${props.label}": ${getCount()}`),
+    () => [count.value],
+  );
 
-  withEffect(c, () => {
-    console.log(`Value of "${props.label}": ${count.value}`)
-  }, () => [count.value])
-
-  return () =>
+  return () => (
     <div>
       <label>{props.label}: </label>
-      <button onClick={onIncrement}>{count.value}</button>
+      <button onClick={onIncrement}>{getCount()}</button>
     </div>
-})
+  );
+});
 
-render(<Counter/>, document.getElementById('app'))
+render(<Counter />, document.getElementById('app'));
 ```
 
 ## API
 
 ### Component definition
 
-- `stateless(displayName, render: props => vnode)`
-- `stateful(displayName, init: c => props => vnode)`
+- `component(displayName, render: props => vnode): ComponentClass`
+- `component(displayName, init: props => () => vnode): ComponentClass`
+- `component(displayName): (render: props => vnode) => ComponentClass`
+- `component(displayName): (init: props => () => vnode) => ComponentClass`
 
 ### Utility functions
 
-- `isMounted(c)`
-- `refresh(c)`
-- `getContextValue(c, context, defaultValue?)`
-- `asRef(valueOrRef)`
-- `toRef(getter)`
+- tbd
 
-### Handlers
+### Extensions
 
-- `withProps(c, defaultProps?)`
-- `withState(c, initialState)`
-- `withValue(c, initialValue)`
-- `withMemo(c, calculation, getDependencies)`
-- `withContext(c, context)`
-- `withEffect(c, action, getDependencies? | null)`
-- `withInterval(c, action, milliseconds)`
-- `withPromise(c, getPromise)`
+- `preset(props, defaultProps or getDefaultProps)`
+- `stateVal(initialValue)`
+- `stateObj(initialValues)`
+- `createMemo(calculation, getDependencies)`
+- `consume(context)`
+- `effect(action, getDependencies? | null)`
+- `interval(action, milliseconds)`
+- `handlePromise(getPromise)`
 
 ## Project state
 

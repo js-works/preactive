@@ -1,60 +1,36 @@
-import { Context } from 'preact'
-import Ctrl from './types/Ctrl'
+// === exports =======================================================
 
-// --- asRef ---------------------------------------------------------
+export { asRef, toRef };
 
-export function asRef<T>(arg: { current: T } | T): { current: T } {
-  return (arg instanceof RefClass)
-    ? arg
-    : new RefClass(arg)
+// === asRef =========================================================
+
+function asRef<T>(arg: { current: T } | T): { current: T } {
+  return arg instanceof RefClass ? arg : new RefClass(arg);
 }
 
-// --- toRef ---------------------------------------------------------
+// === toRef =========================================================
 
-export function toRef<T>(getter: () => T): { current: T } {
-  const ref = Object.create(RefClass.prototype)
+function toRef<T>(getValue: () => T): { current: T } {
+  const ref = new RefClass(getValue());
 
-  Object.defineProperty(ref, 'current', {
+  Object.defineProperty(ref, "current", {
     enumerable: true,
-    get: getter,
+    get: getValue,
+
     set: () => {
-      throw new Error('<ref>.current is read-only')
-    }
-  })
+      throw new Error("<ref>.value is read-only");
+    },
+  });
 
-  return ref
-}
-
-// --- isMounted -----------------------------------------------------
-
-export function isMounted(c: Ctrl) {
-  return c.isMounted()
-}
-
-// --- refresh ---------------------------------------------------
-
-export function refresh(c: Ctrl) {
-  c.refresh()
-}
-
-// --- getContextValue -----------------------------------------------
-
-export function getContextValue<T>(c: Ctrl, ctx: Context<T>, defaultValue: T) {
-  let ret = c.getContextValue(ctx)
-
-  if (ret === undefined) {
-    ret = defaultValue
-  }
-
-  return ret
+  return ref;
 }
 
 // --- locals --------------------------------------------------------
 
 class RefClass<T> {
-  current: T
-  
+  current: T;
+
   constructor(initialValue: T) {
-    this.current = initialValue
+    this.current = initialValue;
   }
 }

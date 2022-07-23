@@ -1,25 +1,26 @@
 /** @jsx h */
-import { h, createContext, Ref } from "preact";
+import { h, createContext, Ref, RefObject } from 'preact';
 
 import {
   asRef,
-  stateful,
-  handler,
-  refresh,
-  withContext,
-  withEffect,
-  withInterval,
-  withMemo,
-  withMethods,
-  withPromise,
-  withValue,
+  component,
+  createMemo,
+  stateVal,
+  stateObj,
+  effect,
+  consume,
+  interval,
+  handleMethods,
+  handlePromise,
+  getRefresher,
+  createTicker,
+  preset,
   toRef,
-  withProps,
-  withState,
-} from "../main/index";
+  PropsOf,
+} from '../main/index';
 
 export default {
-  title: "Demos",
+  title: 'Demos',
 };
 
 export const simpleCounterDemo = () => <SimpleCounterDemo />;
@@ -32,66 +33,60 @@ export const promiseDemo = () => <PromiseDemo />;
 
 // === Simple counter demo ===========================================
 
-type SimpleCounterProps = {
+const SimpleCounterDemo = component('SimpleCounterDemo')<{
   initialCount?: number;
   label?: string;
 
   ref?: {
     reset(n: number): void;
   };
-};
+}>((p) => {
+  const props = preset(p, {
+    initialCount: 0,
+    label: 'Counter',
+  });
 
-const SimpleCounterDemo = stateful<SimpleCounterProps>(
-  "SimpleCounterDemo",
-  (c) => {
-    const props = withProps(c, {
-        initialCount: 0,
-        label: "Counter",
-      }),
-      [count, setCount] = withValue(c, props.initialCount),
-      onIncrement = () => setCount((it) => it + 1),
-      onInput = (ev: any) => setCount(ev.currentTarget.valueAsNumber); // TODO
+  const [getCount, setCount] = stateVal(props.initialCount);
+  const onIncrement = () => setCount((it) => it + 1);
+  const onInput = (ev: any) => setCount(ev.currentTarget.valueAsNumber); // TODO
 
-    withEffect(
-      c,
-      () => {
-        console.log(`Value of "${props.label}" is now ${count.value}`);
-      },
-      () => [count.value]
-    );
+  effect(
+    () => {
+      console.log(`Value of "${props.label}" is now ${getCount}`);
+    },
+    () => [getCount()],
+  );
 
-    return () => (
-      <div>
-        <h3>Simple counter demo:</h3>
-        <label>{props.label}: </label>
-        <input type="number" value={count.value} onInput={onInput} />
-        <button onClick={onIncrement}>{count.value}</button>
-      </div>
-    );
-  }
-);
+  return () => (
+    <div>
+      <h3>Simple counter demo:</h3>
+      <label>{props.label}: </label>
+      <input type="number" value={getCount()} onInput={onInput} />
+      <button onClick={onIncrement}>{getCount()}</button>
+    </div>
+  );
+});
 
 // === Complex counter demo ==========================================
 
-type ComplexCounterProps = {
+const ComplexCounter = component('ComplexCounter')<{
   initialCount?: number;
   label?: string;
 
-  componentRef?: Ref<{
+  componentRef?: RefObject<{
     reset(n: number): void;
   }>;
-};
+}>((p) => {
+  const props = preset(p, {
+    initialCount: 0,
+    label: 'Counter',
+  });
 
-const ComplexCounter = stateful<ComplexCounterProps>("ComplexCounter", (c) => {
-  const props = withProps(c, {
-      initialCount: 0,
-      label: "Counter",
-    }),
-    [count, setCount] = withValue(c, props.initialCount),
-    onIncrement = () => setCount((it) => it + 1),
-    onDecrement = () => setCount((it) => it - 1);
+  const [getCount, setCount] = stateVal(props.initialCount);
+  const onIncrement = () => setCount((it) => it + 1);
+  const onDecrement = () => setCount((it) => it - 1);
 
-  withMethods(c, "componentRef", {
+  handleMethods(() => props.componentRef, {
     reset(n) {
       setCount(n);
     },
@@ -102,17 +97,18 @@ const ComplexCounter = stateful<ComplexCounterProps>("ComplexCounter", (c) => {
       <h3>Complex counter demo:</h3>
       <label>{props.label}: </label>
       <button onClick={onDecrement}>-</button>
-      {` ${count.value} `}
+      {` ${getCount()} `}
       <button onClick={onIncrement}>+</button>
     </div>
   );
 });
 
-const ComplexCounterDemo = stateful("ComplexCounterDemo", (c) => {
+const ComplexCounterDemo = component('ComplexCounterDemo', () => {
   const counterRef: any =
-      asRef<ComplexCounterProps["componentRef"] | null>(null), // TODO
-    onResetToZeroClick = () => counterRef.current.reset(0),
-    onResetToOneHundredClick = () => counterRef.current.reset(100);
+    asRef<PropsOf<typeof ComplexCounter>['componentRef'] | null>(null); // TODO
+
+  const onResetToZeroClick = () => counterRef.current.reset(0);
+  const onResetToOneHundredClick = () => counterRef.current.reset(100);
 
   return () => (
     <div>
@@ -126,47 +122,28 @@ const ComplexCounterDemo = stateful("ComplexCounterDemo", (c) => {
 
 // === Clock demo ====================================================
 
-const ClockDemo = stateful("ClockDemo", (c) => {
-  const time = withTime(c);
+const ClockDemo = component('ClockDemo', () => {
+  const getTime = createTicker((it) => it.toLocaleTimeString());
 
   return () => (
     <div>
       <h3>Clock demo:</h3>
-      Current time: {time.value}
+      Current time: {getTime()}
     </div>
   );
 });
 
-function getTime() {
-  return new Date().toLocaleTimeString();
-}
-
-const withTime = handler("withTime", (c) => {
-  const [time, setTime] = withValue(c, getTime());
-
-  withInterval(
-    c,
-    () => {
-      setTime(getTime());
-    },
-    1000
-  );
-
-  return time;
-});
-
 // === Memo demo =====================================================
 
-const MemoDemo = stateful("MemoDemo", (c) => {
-  const [state, setState] = withState(c, { count: 0 }),
-    onButtonClick = () => setState({ count: state.count + 1 }),
-    memo = withMemo(
-      c,
-      () =>
-        "Last time the memoized value was calculated: " +
-        new Date().toLocaleTimeString(),
-      () => [Math.floor(state.count / 5)]
-    );
+const MemoDemo = component('MemoDemo', () => {
+  const [state, setState] = stateObj({ count: 0 });
+  const onButtonClick = () => setState({ count: state.count + 1 });
+  const memo = createMemo(
+    () =>
+      'Last time the memoized value was calculated: ' +
+      new Date().toLocaleTimeString(),
+    () => [Math.floor(state.count / 5)],
+  );
 
   return () => (
     <div>
@@ -183,30 +160,24 @@ const MemoDemo = stateful("MemoDemo", (c) => {
 
 // === Interval demo =================================================
 
-const IntervalDemo = stateful("IntervalDemo", (c) => {
-  const [state, setState] = withState(c, {
-      count: 0,
-      delay: 1000,
-    }),
-    onReset = () => setState("delay", 1000);
+const IntervalDemo = component('IntervalDemo', () => {
+  const [state, setState] = stateObj({
+    count: 0,
+    delay: 1000,
+  });
 
-  withInterval(
-    c,
-    () => {
-      setState("count", (it) => it + 1);
-    },
-    toRef(() => state.delay)
+  const onReset = () => setState({ delay: 1000 });
+
+  interval(
+    () => setState({ count: state.count + 1 }),
+    toRef(() => state.delay),
   );
 
-  withInterval(
-    c,
-    () => {
-      if (state.delay > 10) {
-        setState("delay", (it) => (it /= 2));
-      }
-    },
-    1000
-  );
+  interval(() => {
+    if (state.delay > 10) {
+      setState({ delay: (state.delay /= 2) });
+    }
+  }, 1000);
 
   return () => (
     <div>
@@ -223,30 +194,30 @@ const IntervalDemo = stateful("IntervalDemo", (c) => {
 
 const translations = {
   en: {
-    salutation: "Hello, ladies and gentlemen!",
+    salutation: 'Hello, ladies and gentlemen!',
   },
   de: {
-    salutation: "Hallo, meine Damen und Herren!",
+    salutation: 'Hallo, meine Damen und Herren!',
   },
   fr: {
-    salutation: "Salut, Mesdames, Messieurs!",
+    salutation: 'Salut, Mesdames, Messieurs!',
   },
 };
 
-const LocaleCtx = createContext("en");
+const LocaleCtx = createContext('en');
 
-const ContextDemo = stateful("ContextDemo", (c) => {
-  const [state, setState] = withState(c, { locale: "en" }),
-    onLocaleChange = (ev: any) => setState({ locale: ev.target.value });
+const ContextDemo = component('ContextDemo', () => {
+  const [getLocale, setLocale] = stateVal('en');
+  const onLocaleChange = (ev: any) => setLocale(ev.target.value);
 
   return () => (
-    <LocaleCtx.Provider value={state.locale}>
+    <LocaleCtx.Provider value={getLocale()}>
       <h3>Context demo:</h3>
       <div>
         <label htmlFor="lang-selector">Select language: </label>
         <select
           id="lang-selector"
-          value={state.locale}
+          value={getLocale()}
           onChange={onLocaleChange}
         >
           <option value="en">en</option>
@@ -259,60 +230,56 @@ const ContextDemo = stateful("ContextDemo", (c) => {
   );
 });
 
-type LocaleTextProps = {
+const LocaleText = component<{
   id: string;
-};
-
-const LocaleText = stateful<LocaleTextProps>("LocaleText", (c) => {
-  const props = withProps(c),
-    locale = withContext(c, LocaleCtx);
+}>('LocaleText', (props) => {
+  const getLocale = consume(LocaleCtx);
 
   return () => (
     <p>
-      {(translations as any)[locale.value][props.id]} {/* // TODO */}
+      {(translations as any)[getLocale()][props.id]} {/* // TODO */}
     </p>
   );
 });
 
 // === promise demo ==================================================
 
-type LoaderProps = {
+const Loader = component<{
   loadingText?: string;
   finishText?: string;
-};
-
-const Loader = stateful<LoaderProps>("DataLoad", (c) => {
-  const props = withProps(c),
-    res = withPromise(c, () => wait(4000));
+}>('DataLoad', (props) => {
+  const res = handlePromise(() => wait(4000));
 
   return () =>
-    res.state === "pending" ? (
+    res.state === 'pending' ? (
       <div>{props.loadingText}</div>
     ) : (
       <div>{props.finishText}</div>
     );
 });
 
-const PromiseDemo = stateful("PromiseDemo", (c) => {
-  const [state, setState] = withState(c, {
-      key: 0,
-      loadingText: "Loading...",
-      finishText: "Finished!",
-    }),
-    onRefresh = () => refresh(c),
-    onRestart = () => setState("key", (it: any) => it + 1), // TODO
-    onToggleLoadingText = () =>
-      setState("loadingText", (it: any) =>
-        it === "Loading..." ? "Please wait..." : "Loading..."
-      ), // TODO
-    onToggleFinishText = () =>
-      setState("finishText", (it: any) =>
-        it === "Finished!" ? "Done!" : "Finished!"
-      ); // TODO
+const PromiseDemo = component('PromiseDemo', () => {
+  const [state, set] = stateObj({
+    key: 0,
+    loadingText: 'Loading...',
+    finishText: 'Finished!',
+  });
+
+  const refresh = getRefresher();
+  const onRefresh = () => refresh();
+  const onRestart = () => set.key((it) => it + 1); // TODO
+
+  const onToggleLoadingText = () =>
+    set.loadingText((it) =>
+      it === 'Loading...' ? 'Please wait...' : 'Loading...',
+    );
+
+  const onToggleFinishText = () =>
+    set.finishText((it) => (it === 'Finished!' ? 'Done!' : 'Finished!'));
 
   return () => (
     <div>
-      <h3>Promise demo (last update {getTime()})</h3>
+      <h3>Promise demo (last update {new Date().toLocaleTimeString()})</h3>
       <section>
         <Loader
           key={state.key}

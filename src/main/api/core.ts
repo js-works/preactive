@@ -1,217 +1,277 @@
 import {
-  Component,
-  options,
-  VNode,
-  Context,
+  createElement,
+  render as preactRender,
   Component as PreactComponent,
-  ComponentType,
-  FunctionComponent,
-} from "preact";
-import {} from "preact/compat";
-import Ctrl from "./types/Ctrl";
-import Props from "./types/Props";
+  ComponentClass,
+  JSX
+} from 'preact';
 
-const oldDiffHook = (options as any)._diff;
+import type { Context, VNode } from 'preact';
+
+// === exports =======================================================
+
+export { component, h, render, getCtrl };
+export type { Ctrl, Props, PropsOf };
+
+// === exported types ================================================
+
+interface Props extends Record<string, any> {}
+
+interface ComponentFunc<P extends Props> {
+  (p: P): VNode | (() => VNode);
+}
+
+interface Ctrl {
+  afterMount(task: () => void): void;
+  beforeUpdate(task: () => void): void;
+  afterUpdate(task: () => void): void;
+  beforeUnmount(task: () => void): void;
+  refresh(): void;
+  consumeContext<T>(ctx: Context<T>): () => T;
+}
+
+type PropsOf<T extends ComponentClass<any>> = T extends ComponentClass<infer P>
+  ? P
+  : never;
+
+// === local types ===================================================
+
+type Task = () => void;
+
+type LifecycleEvent =
+  | 'afterMount'
+  | 'beforeUpdate'
+  | 'afterUpdate'
+  | 'beforeUnmount';
+
+type LifecycleEventHandler = (event: LifecycleEvent) => void;
+
+// ===  constants ====================================================
 
 // Brrrr, this is horrible as hell - please fix asap!!!!
-const isMinimized = Component.name !== "Component",
-  keyContextId = isMinimized ? "__c" : "_id",
-  keyContextDefaultValue = isMinimized ? "__" : "_defaultValue";
+const isMinimized = PreactComponent.name !== 'Component';
+const keyContextId = isMinimized ? '__c' : '_id';
+const keyContextDefaultValue = isMinimized ? '__' : '_defaultValue';
+const preactComponentKey = Symbol('preactComponent');
 
-if (process.env.NODE_ENV === ("development" as any)) {
-  const oldVnode = options.vnode;
+// === local data ====================================================
 
-  options.vnode = (vnode) => {
-    let type: any = vnode && vnode.type, // TODO
-      validate = typeof type === "function" && type["js-preactive:validate"];
+let getCurrentCtrl: (() => Ctrl) | null = null;
 
-    if (validate) {
-      const result = validate(vnode.props);
+// === local classes and functions ===================================
 
-      let errorMsg = null;
+class Controller implements Ctrl {
+  #component: BaseComponent<any>;
 
-      if (result === false) {
-        errorMsg = "Invalid value";
-      } else if (result !== true && result !== null && result !== undefined) {
-        errorMsg = result.message || "Invalid value";
-      }
-
-      if (errorMsg) {
-        throw new TypeError(
-          'Prop validation error for component "' +
-            type.displayName +
-            '" => ' +
-            errorMsg
-        );
-      }
-    }
-
-    return oldVnode ? oldVnode(vnode) : vnode;
+  #lifecycle: Record<LifecycleEvent, Task[]> = {
+    afterMount: [],
+    beforeUpdate: [],
+    afterUpdate: [],
+    beforeUnmount: []
   };
+
+  constructor(
+    component: BaseComponent<any>,
+    setLifecycleEventHandler: (handler: LifecycleEventHandler) => void
+  ) {
+    this.#component = component;
+
+    setLifecycleEventHandler((eventName) => {
+      this.#lifecycle[eventName].forEach((it) => it());
+    });
+  }
+
+  afterMount(task: Task) {
+    this.#lifecycle.afterMount.push(task);
+  }
+
+  beforeUpdate(task: Task) {
+    this.#lifecycle.beforeUpdate.push(task);
+  }
+
+  afterUpdate(task: Task) {
+    this.#lifecycle.afterUpdate.push(task);
+  }
+
+  beforeUnmount(task: Task) {
+    this.#lifecycle.beforeUnmount.push(task);
+  }
+
+  refresh() {
+    this.#component.forceUpdate();
+  }
+
+  consumeContext<T>(ctx: Context<T>): () => T {
+    return () => {
+      const context = this.#component.context;
+      const provider = !context ? null : context[(ctx as any)[keyContextId]];
+
+      return !provider
+        ? (ctx as any)[keyContextDefaultValue]
+        : provider.props.value;
+    };
+  }
 }
 
-// --- constants -----------------------------------------------------
+class BaseComponent<P extends Props> extends PreactComponent<P> {
+  #ctrl!: Ctrl;
+  #emit: null | ((event: LifecycleEvent) => void) = null;
+  #mounted = false;
+  #main: any;
+  #propsObj: any;
+  #render: null | (() => VNode) = null;
+  #stateful: boolean | undefined = undefined;
 
-const REGEX_DISPLAY_NAME = /^[A-Z][a-zA-Z0-9]*$/;
+  static #controllerBaseClasses = new WeakMap<any, any>();
 
-// --- stateless -----------------------------------------------------
+  constructor(props: P, main: ComponentFunc<P>) {
+    super(props);
+    this.#main = main;
+    this.#propsObj = { ...props };
+  }
 
-export function stateless<P extends Props = {}>(
-  displayName: string,
-  render: (prop: P) => VNode
-): FunctionComponent<P> {
-  if (process.env.NODE_ENV === ("development" as any)) {
-    let errorMsg;
-
-    if (typeof displayName !== "string") {
-      errorMsg = "First argument must be a string";
-    } else if (!displayName.match(REGEX_DISPLAY_NAME)) {
-      errorMsg = `Invalid component display name "${displayName}"`;
-    } else if (typeof render !== "function") {
-      errorMsg = "Expected function as second argument";
-    }
-
-    if (errorMsg) {
-      throw new TypeError(
-        "Error when defining stateless component" +
-          (displayName ? ` "${displayName}": ` : ": ") +
-          errorMsg
-      );
+  componentDidMount() {
+    if (this.#stateful) {
+      this.#mounted = true;
+      this.#emit && this.#emit('afterMount');
     }
   }
 
-  let ret = render.bind(null);
-
-  setPropValue(ret, "name", displayName);
-  setPropValue(ret, "displayName", displayName);
-
-  return ret;
-}
-
-// --- stateful ------------------------------------------------------
-
-export function stateful<P extends Props = {}>(
-  displayName: string,
-  init: (c: Ctrl<P>) => (props: P) => VNode
-): ComponentType<P> {
-  if (process.env.NODE_ENV === ("development" as any)) {
-    let errorMsg;
-
-    if (typeof displayName !== "string") {
-      errorMsg = "First argument must be a string";
-    } else if (!displayName.match(REGEX_DISPLAY_NAME)) {
-      errorMsg = `Invalid component display name "${displayName}"`;
-    } else if (typeof init !== "function") {
-      errorMsg = "Expected function as second argument";
-    }
-
-    if (errorMsg) {
-      throw new TypeError(
-        "Error when defining stateful component" +
-          (displayName ? ` "${displayName}": ` : ": ") +
-          errorMsg
-      );
-    }
+  componentDidUpdate() {
+    this.#emit && this.#emit('afterUpdate');
   }
 
-  class CustomComponent extends PreactComponent<P> {
-    constructor(props: P) {
-      super(props);
-      this.props = props;
+  componentWillUnmount() {
+    this.#emit && this.#emit('beforeUnmount');
+  }
 
-      let mounted = false,
-        initialized = false;
+  render() {
+    let content: any;
 
-      const afterMountNotifier = createNotifier(),
-        beforeUpdateNotifier = createNotifier(),
-        afterUpdateNotifier = createNotifier(),
-        beforeUnmountNotifier = createNotifier(),
-        runOnceBeforeUpdateTasks = [] as Action[],
-        ctrl: Ctrl<P> = {
-          getDisplayName: () => displayName,
-          getProps: () => this.props,
-          isMounted: () => mounted,
-          isInitialized: () => initialized,
+    if (this.#stateful === undefined) {
+      try {
+        getCurrentCtrl = () => {
+          let ctrlBaseClass = BaseComponent.#controllerBaseClasses.get(
+            this.#main
+          );
 
-          refresh: (runOnceBeforeUpdate: Action) => {
-            if (runOnceBeforeUpdate) {
-              runOnceBeforeUpdateTasks.push(runOnceBeforeUpdate);
+          if (!ctrlBaseClass) {
+            ctrlBaseClass = class Ctrl extends Controller {};
+            BaseComponent.#controllerBaseClasses.set(this.#main, ctrlBaseClass);
+          }
+
+          this.#ctrl = new ctrlBaseClass(this, (handler: any) => {
+            this.#emit = handler;
+          });
+
+          this.#ctrl.beforeUpdate(() => {
+            for (const key in this.#propsObj) {
+              delete this.#propsObj[key];
             }
 
-            this.forceUpdate();
-          },
+            Object.assign(this.#propsObj, this.props);
+          });
 
-          getContextValue: (ctx: Context<any>) => {
-            const provider = (this as any).context[(ctx as any)[keyContextId]];
+          getCurrentCtrl = () => this.#ctrl;
 
-            return !provider
-              ? (ctx as any)[keyContextDefaultValue]
-              : provider.props.value;
-          },
+          return this.#ctrl;
+        };
 
-          afterMount: afterMountNotifier.subscribe,
-          beforeUpdate: beforeUpdateNotifier.subscribe,
-          afterUpdate: afterUpdateNotifier.subscribe,
-          beforeUnmount: beforeUnmountNotifier.subscribe,
-          //runOnceBeforeUpdate: task => runOnceBeforeUpdateTasks.push(task)
-        },
-        render = init(ctrl);
+        const result = this.#main(this.#propsObj);
 
-      initialized = true;
-
-      this.componentDidMount = () => {
-        mounted = true;
-        afterMountNotifier.notify();
-      };
-
-      this.componentDidUpdate = afterUpdateNotifier.notify;
-      this.componentWillUnmount = beforeUnmountNotifier.notify;
-
-      this.render = () => {
-        const taskCount = runOnceBeforeUpdateTasks.length;
-
-        for (let i = 0; i < taskCount; ++i) {
-          runOnceBeforeUpdateTasks[i]();
-        }
-
-        if (taskCount === runOnceBeforeUpdateTasks.length) {
-          runOnceBeforeUpdateTasks.length = 0;
+        if (typeof result === 'function') {
+          this.#stateful = true;
+          this.#render = result;
         } else {
-          runOnceBeforeUpdateTasks.splice(0, taskCount);
+          if (this.#ctrl) {
+            throw new Error(
+              'Not allowed to call extensions inside of stateless components'
+            );
+          }
+
+          this.#stateful = false;
+          content = result ?? null;
         }
-
-        beforeUpdateNotifier.notify();
-
-        return render(this.props as any); // TODO
-      };
+      } finally {
+        getCurrentCtrl = null;
+      }
     }
 
-    render() {
-      return null as any as VNode; // will be overridden in the constructor
+    if (this.#stateful) {
+      if (this.#mounted) {
+        this.#emit!('beforeUpdate');
+      }
+
+      return this.#render!();
+    } else {
+      return content !== undefined ? content : this.#main(this.#propsObj);
     }
   }
-
-  setPropValue(CustomComponent, "name", displayName);
-  setPropValue(CustomComponent, "displayName", displayName);
-
-  return CustomComponent as ComponentType<P>;
 }
 
-// --- locals --------------------------------------------------------
+// === exported functions ============================================
 
-function setPropValue(obj: object, propName: string, value: any) {
-  Object.defineProperty(obj, propName, { value });
+function getCtrl(): Ctrl {
+  if (!getCurrentCtrl) {
+    throw new Error('Extension has been called outside of component function');
+  }
+
+  return getCurrentCtrl();
 }
 
-function createNotifier() {
-  const subscribers: Action[] = [];
+function render(content: VNode, container: HTMLElement | string) {
+  const target =
+    typeof container === 'string'
+      ? document.querySelector(container)
+      : container;
 
-  return {
-    notify: () => subscribers.forEach((it) => it()),
-    subscribe: (subscriber: Action) => subscribers.push(subscriber),
+  if (!target) {
+    throw Error('Invalid argument "container" used for function "render"');
+  }
+
+  preactRender(content, target);
+}
+
+function component(
+  name: string
+): <P extends Props>(fn: ComponentFunc<P>) => ComponentClass<P>;
+
+function component<P extends Props>(
+  name: string,
+  fn: ComponentFunc<P>
+): ComponentClass<P>;
+
+function component(arg1: any, arg2?: any): any {
+  if (arguments.length === 1) {
+    return (fn: ComponentFunc<any>) => component(arg1, fn);
+  }
+
+  const clazz = class extends BaseComponent<any> {
+    constructor(props: unknown) {
+      super(props, arg2);
+    }
   };
+
+  return Object.defineProperty(clazz, 'name', {
+    value: arg1
+  });
 }
 
-// --- types ---------------------------------------------------------
+function h<P extends Props>(
+  type: string | ComponentFunc<any>,
+  props: P,
+  ...children: VNode[]
+): JSX.Element {
+  if (typeof type === 'string') {
+    return createElement(type, props, ...children);
+  }
 
-type Action = () => void;
+  let preactComponent: any = (type as any)[preactComponentKey];
+
+  if (!preactComponent) {
+    preactComponent = component(type.name, type);
+    (type as any)[preactComponentKey] = preactComponent;
+  }
+
+  return createElement(preactComponent, props, ...children);
+}
