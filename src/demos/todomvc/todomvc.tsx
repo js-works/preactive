@@ -2,10 +2,8 @@
 import { createRef, h, RefObject } from 'preact';
 import { component, render } from '../../main/api/core';
 import { getRefresher, effect, stateObj } from '../../main/api/ext';
-import { defineMessages } from 'js-messages';
-import { createReducer, on } from 'js-reducers';
-import { createStore } from 'redux';
 import { Router, Link } from 'preact-router';
+import { configureStore, createSlice, PayloadAction } from '@reduxjs/toolkit';
 // @ts-ignore
 import { createHashHistory } from 'history';
 import classNames from 'classnames';
@@ -31,45 +29,56 @@ const ENTER_KEY = 13;
 const ESC_KEY = 27;
 const STORAGE_KEY = 'todomvc::js-preactive';
 
-const TodoAction = defineMessages('todos', {
-  create: (title: string) => ({ title }),
-  edit: (id: number, title: string) => ({ id, title }),
-  destroy: (id: number) => ({ id }),
-  toggle: (id: number, completed: boolean) => ({ id, completed }),
-  toggleAll: (completed: boolean) => ({ completed }),
-  clearCompleted: null
+const todoSlice = createSlice({
+  name: 'todos',
+
+  initialState: {
+    todos: [] as Todo[]
+  },
+
+  reducers: {
+    create(state, action: PayloadAction<{ title: string }>) {
+      const id = state.todos.reduce((max, it) => Math.max(max, it.id + 1), 0);
+
+      state.todos.push({
+        id,
+        title: action.payload.title,
+        completed: false
+      });
+    },
+
+    edit(state, action: PayloadAction<{ id: number; title: string }>) {
+      state.todos.find((it) => it.id === action.payload.id)!.title =
+        action.payload.title;
+    },
+
+    destroy(state, action: PayloadAction<{ id: number }>) {
+      const idx = state.todos.findIndex((it) => it.id === action.payload.id);
+      state.todos.splice(idx, 1);
+    },
+
+    toggle(state, action: PayloadAction<{ id: number; completed: boolean }>) {
+      const idx = state.todos.findIndex((it) => it.id === action.payload.id);
+      state.todos[idx].completed = action.payload.completed;
+    },
+
+    toggleAll(state, action: PayloadAction<{ completed: boolean }>) {
+      state.todos.forEach(
+        (it) => void (it.completed = action.payload.completed)
+      );
+    },
+
+    clearCompleted(state) {
+      state.todos = state.todos.filter((it) => !it.completed);
+    }
+  }
 });
 
-const todoReducer = createReducer({ todos: [] as Todo[] }, [
-  on(TodoAction.create, (state, { title }) => {
-    const id = state.todos.reduce((max, todo) => Math.max(max, todo.id + 1), 0);
-    state.todos.push({ id, title, completed: false });
-  }),
+const store = configureStore({
+  reducer: todoSlice.reducer
+});
 
-  on(TodoAction.edit, (state, { id, title }) => {
-    state.todos.find((it) => it.id === id)!.title = title;
-  }),
-
-  on(TodoAction.destroy, (state, { id }) => {
-    const idx = state.todos.findIndex((todo) => todo.id === id);
-    state.todos.splice(idx, 1);
-  }),
-
-  on(TodoAction.toggle, (state, { id, completed }) => {
-    const idx = state.todos.findIndex((todo) => todo.id === id);
-    state.todos[idx].completed = completed;
-  }),
-
-  on(TodoAction.toggleAll, (state, { completed }) => {
-    state.todos.forEach((todo) => void (todo.completed = completed));
-  }),
-
-  on(TodoAction.clearCompleted, (state) => {
-    state.todos = state.todos.filter((todo) => !todo.completed);
-  })
-]);
-
-const store = createStore(todoReducer, { todos: loadTodos() });
+const actions = todoSlice.actions;
 const dispatch = store.dispatch;
 
 const Header = component('Header', () => {
@@ -83,7 +92,7 @@ const Header = component('Header', () => {
 
       if (newTitle) {
         ev.preventDefault();
-        dispatch(TodoAction.create(newTitle));
+        dispatch(actions.create({ title: newTitle }));
       }
     }
   };
@@ -115,10 +124,12 @@ const TodoItem = component('TodoItem')<{
     title: props.todo.title
   });
 
-  const onDestroyClick = () => dispatch(TodoAction.destroy(props.todo.id));
+  const onDestroyClick = () => dispatch(actions.destroy({ id: props.todo.id }));
 
   const onToggleClick = (ev: any) =>
-    dispatch(TodoAction.toggle(props.todo.id, ev.target.checked));
+    dispatch(
+      actions.toggle({ id: props.todo.id, completed: ev.target.checked })
+    );
 
   const onDoubleClick = () => set.active(true);
   const onInput = (ev: any) => set.title(ev.target.value);
@@ -129,9 +140,9 @@ const TodoItem = component('TodoItem')<{
     set({ active: false, title });
 
     if (title) {
-      dispatch(TodoAction.edit(props.todo.id, title));
+      dispatch(actions.edit({ id: props.todo.id, title }));
     } else {
-      dispatch(TodoAction.destroy(props.todo.id));
+      dispatch(actions.destroy({ id: props.todo.id }));
     }
   };
 
@@ -186,7 +197,9 @@ const Main = component('Main')<{
 }>((props) => {
   const onChange = () =>
     dispatch(
-      TodoAction.toggleAll(!props.todos.every((todo) => todo.completed))
+      actions.toggleAll({
+        completed: !props.todos.every((todo) => todo.completed)
+      })
     );
 
   return () => {
@@ -259,7 +272,7 @@ const Footer = component('Footer')<{
   todos: Todo[];
   filter: TodoFilter;
 }>((props) => {
-  const onClearCompletedClick = () => dispatch(TodoAction.clearCompleted());
+  const onClearCompletedClick = () => dispatch(actions.clearCompleted());
 
   return () => {
     const completed = props.todos.filter((todo) => todo.completed).length,
@@ -283,6 +296,7 @@ const Footer = component('Footer')<{
 
 function saveTodos(todos: Todo[]) {
   try {
+    console.log(333, todos);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
   } catch {}
 }
@@ -322,10 +336,11 @@ const App = component('App', () => {
   effect(
     () =>
       store.subscribe(() => {
+        console.log(1111);
         saveTodos(store.getState().todos);
         refresh();
       }),
-    null
+    () => []
   );
 
   return () => (
