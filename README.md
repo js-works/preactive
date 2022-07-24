@@ -54,27 +54,24 @@ render(<HelloWorld />, document.querySelector('#app'));
 ```tsx
 import { h, render } from 'preact';
 import { component } from 'js-preactive';
-import { preset, stateObj } from 'js-preactive/ext';
+import { preset, stateVal } from 'js-preactive/ext';
 
 const Counter = component('Counter')<{
   initialCount?: number;
   label?: string;
 }>((p) => {
-  const props = preset(p, {
+  const props = preset(p, () => ({
     initialCount: 0,
-    label: 'Counter',
-  });
+    label: 'Counter'
+  }));
 
-  const [state, set] = stateObj({
-    count: props.initialCount,
-  });
-
-  const onIncrement = () => set.count((it) => it + 1);
+  const [getCount, setCount] = stateVal(props.initialCount);
+  const onIncrement = () => setCount((it) => it + 1);
 
   return () => (
     <div>
       <label>{props.label}: </label>
-      <button onClick={onIncrement}>{state.count}</button>
+      <button onClick={onIncrement}>{getCount()}</button>
     </div>
   );
 });
@@ -87,7 +84,7 @@ render(<Counter />, document.getElementById('app'));
 ```tsx
 import { h, render } from 'preact';
 import { component } from 'js-preactive';
-import { effect, onMount, preset, stateVal } from 'js-preactive/ext';
+import { effect, onMount, preset, stateObj } from 'js-preactive/ext';
 
 const Counter = component('Counter')<{
   initialCount?: number;
@@ -95,25 +92,28 @@ const Counter = component('Counter')<{
 }>((p) => {
   const props = preset(p, () => ({
     initialCount: 0,
-    label: 'Counter',
+    label: 'Counter'
   }));
 
-  const [getCount, setCount] = stateVal(props.initialCount);
-  const onIncrement = () => setCount((it) => it + 1);
+  const [state, set] = stateObj({
+    count: props.initialCount
+  });
+
+  const onIncrement = () => set.count((it) => it + 1);
 
   onMount(() => {
     console.log(`"${props.label}" has been mounted`);
   });
 
   effect(
-    () => console.log(`Value of "${props.label}": ${getCount()}`),
-    () => [count.value],
+    () => console.log(`Value of "${props.label}": ${state.count}`),
+    () => [state.count]
   );
 
   return () => (
     <div>
       <label>{props.label}: </label>
-      <button onClick={onIncrement}>{getCount()}</button>
+      <button onClick={onIncrement}>{state.count}</button>
     </div>
   );
 });
