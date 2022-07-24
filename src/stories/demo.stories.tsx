@@ -1,8 +1,7 @@
 /** @jsx h */
-import { h, createContext, Ref, RefObject } from 'preact';
+import { h, createContext, createRef, RefObject } from 'preact';
 
 import {
-  asRef,
   component,
   createMemo,
   stateVal,
@@ -15,12 +14,11 @@ import {
   getRefresher,
   createTicker,
   preset,
-  toRef,
-  PropsOf,
+  PropsOf
 } from '../main/index';
 
 export default {
-  title: 'Demos',
+  title: 'Demos'
 };
 
 export const simpleCounterDemo = () => <SimpleCounterDemo />;
@@ -43,7 +41,7 @@ const SimpleCounterDemo = component('SimpleCounterDemo')<{
 }>((p) => {
   const props = preset(p, {
     initialCount: 0,
-    label: 'Counter',
+    label: 'Counter'
   });
 
   const [getCount, setCount] = stateVal(props.initialCount);
@@ -54,7 +52,7 @@ const SimpleCounterDemo = component('SimpleCounterDemo')<{
     () => {
       console.log(`Value of "${props.label}" is now ${getCount}`);
     },
-    () => [getCount()],
+    () => [getCount()]
   );
 
   return () => (
@@ -79,7 +77,7 @@ const ComplexCounter = component('ComplexCounter')<{
 }>((p) => {
   const props = preset(p, {
     initialCount: 0,
-    label: 'Counter',
+    label: 'Counter'
   });
 
   const [getCount, setCount] = stateVal(props.initialCount);
@@ -89,7 +87,7 @@ const ComplexCounter = component('ComplexCounter')<{
   handleMethods(() => props.componentRef, {
     reset(n) {
       setCount(n);
-    },
+    }
   });
 
   return () => (
@@ -105,7 +103,7 @@ const ComplexCounter = component('ComplexCounter')<{
 
 const ComplexCounterDemo = component('ComplexCounterDemo', () => {
   const counterRef: any =
-    asRef<PropsOf<typeof ComplexCounter>['componentRef'] | null>(null); // TODO
+    createRef<PropsOf<typeof ComplexCounter>['componentRef']>(); // TODO
 
   const onResetToZeroClick = () => counterRef.current.reset(0);
   const onResetToOneHundredClick = () => counterRef.current.reset(100);
@@ -136,13 +134,13 @@ const ClockDemo = component('ClockDemo', () => {
 // === Memo demo =====================================================
 
 const MemoDemo = component('MemoDemo', () => {
-  const [state, setState] = stateObj({ count: 0 });
-  const onButtonClick = () => setState({ count: state.count + 1 });
+  const [state, set] = stateObj({ count: 0 });
+  const onButtonClick = () => set.count((it) => it + 1);
   const memo = createMemo(
     () =>
       'Last time the memoized value was calculated: ' +
       new Date().toLocaleTimeString(),
-    () => [Math.floor(state.count / 5)],
+    () => [Math.floor(state.count / 5)]
   );
 
   return () => (
@@ -161,21 +159,21 @@ const MemoDemo = component('MemoDemo', () => {
 // === Interval demo =================================================
 
 const IntervalDemo = component('IntervalDemo', () => {
-  const [state, setState] = stateObj({
+  const [state, set] = stateObj({
     count: 0,
-    delay: 1000,
+    delay: 1000
   });
 
-  const onReset = () => setState({ delay: 1000 });
+  const onReset = () => set.delay(1000);
 
   interval(
-    () => setState({ count: state.count + 1 }),
-    toRef(() => state.delay),
+    () => set.count((it) => it + 1),
+    () => state.delay
   );
 
   interval(() => {
     if (state.delay > 10) {
-      setState({ delay: (state.delay /= 2) });
+      set.delay((it) => (it /= 2));
     }
   }, 1000);
 
@@ -194,14 +192,14 @@ const IntervalDemo = component('IntervalDemo', () => {
 
 const translations = {
   en: {
-    salutation: 'Hello, ladies and gentlemen!',
+    salutation: 'Hello, ladies and gentlemen!'
   },
   de: {
-    salutation: 'Hallo, meine Damen und Herren!',
+    salutation: 'Hallo, meine Damen und Herren!'
   },
   fr: {
-    salutation: 'Salut, Mesdames, Messieurs!',
-  },
+    salutation: 'Salut, Mesdames, Messieurs!'
+  }
 };
 
 const LocaleCtx = createContext('en');
@@ -262,7 +260,7 @@ const PromiseDemo = component('PromiseDemo', () => {
   const [state, set] = stateObj({
     key: 0,
     loadingText: 'Loading...',
-    finishText: 'Finished!',
+    finishText: 'Finished!'
   });
 
   const refresh = getRefresher();
@@ -271,7 +269,7 @@ const PromiseDemo = component('PromiseDemo', () => {
 
   const onToggleLoadingText = () =>
     set.loadingText((it) =>
-      it === 'Loading...' ? 'Please wait...' : 'Loading...',
+      it === 'Loading...' ? 'Please wait...' : 'Loading...'
     );
 
   const onToggleFinishText = () =>

@@ -1,6 +1,5 @@
 import { Context, Ref, RefObject } from 'preact';
-import { asRef } from './utils';
-import { getCtrl, Ctrl, Props } from './core';
+import { getCtrl } from './core';
 
 // === types =========================================================
 
@@ -287,17 +286,27 @@ function handleMethods<M extends Record<string, Function>>(
 
 // --- interval ------------------------------------------------------
 
-function interval(callback: ValueOrRef<() => void>, delay: ValueOrRef<number>) {
-  const callbackRef = asRef(callback);
-  const delayRef = asRef(delay);
+function interval(
+  callbackOrRef: (() => void) | { current: () => void },
+  delayOrGetDelay: number | (() => number)
+) {
+  const getCallback =
+    typeof callbackOrRef === 'function'
+      ? () => callbackOrRef
+      : () => callbackOrRef.current;
+
+  const getDelay =
+    typeof delayOrGetDelay === 'function'
+      ? delayOrGetDelay
+      : () => delayOrGetDelay;
 
   effect(
     () => {
-      const id = setInterval(callbackRef.current, delayRef.current);
+      const id = setInterval(getCallback(), getDelay());
 
       return () => clearInterval(id);
     },
-    () => [callbackRef.current, delayRef.current]
+    () => [getCallback(), getDelay()]
   );
 }
 
