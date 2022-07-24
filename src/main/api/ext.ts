@@ -1,9 +1,9 @@
+import type { ReactiveControllerHost, ReactiveController } from 'lit';
 import { Context, Ref, RefObject } from 'preact';
-import { getCtrl } from './core';
+import { getCtrl, Ctrl } from './core';
 
 // === types =========================================================
 
-type ValueOrRef<T> = T | { current: T };
 type Action<A extends any[] = [], R = void> = (...args: A) => R;
 
 type ContextType<C extends Context<any>> = C extends Context<infer T>
@@ -14,6 +14,7 @@ type ContextType<C extends Context<any>> = C extends Context<infer T>
 
 export {
   consume,
+  create,
   createMemo,
   createTicker,
   effect,
@@ -380,6 +381,81 @@ function handlePromise<T>(
   return getState();
 }
 
+// --- ticker --------------------------------------------------------
+
+function createTicker(): () => Date;
+function createTicker<T>(mapper: (time: Date) => T): () => T;
+
+function createTicker(mapper?: (time: Date) => any): any {
+  const now = () => new Date();
+  const [getTime, setTime] = stateVal(now());
+
+  interval(() => {
+    setTime(now());
+  }, 1000);
+
+  return mapper ? () => mapper(getTime()) : getTime();
+}
+
+// === create ========================================================
+
+type ControllerClass<T, A extends any[]> = {
+  new (host: ReactiveControllerHost, ...args: A): T;
+};
+
+function create<C extends ControllerClass<any, A>, A extends any[]>(
+  controllerClass: C,
+  ...args: A
+): InstanceType<C> {
+  const ctrl = getCtrl();
+  const host = new Host(ctrl);
+
+  return new controllerClass(host, ...args);
+}
+
+class Host implements ReactiveControllerHost {
+  #ctrl: Ctrl;
+  #controllers = new Set<ReactiveController>();
+
+  constructor(ctrl: Ctrl) {
+    this.#ctrl = ctrl;
+
+    ctrl.afterMount(() => {
+      this.#controllers.forEach((it) => it.hostConnected && it.hostConnected());
+    });
+
+    ctrl.beforeUnmount(() => {
+      this.#controllers.forEach(
+        (it) => it.hostDisconnected && it.hostDisconnected()
+      );
+    });
+
+    ctrl.beforeUpdate(() => {
+      this.#controllers.forEach((it) => it.hostUpdate && it.hostUpdate());
+    });
+
+    ctrl.afterUpdate(() => {
+      this.#controllers.forEach((it) => it.hostUpdated && it.hostUpdated());
+    });
+  }
+
+  addController(controller: ReactiveController) {
+    this.#controllers.add(controller);
+  }
+
+  removeController(controller: ReactiveController) {
+    this.#controllers.delete(controller);
+  }
+
+  requestUpdate(): void {
+    this.#ctrl.refresh();
+  }
+
+  get updateComplete() {
+    return Promise.resolve(true); // TODO!!!
+  }
+}
+
 // --- locals --------------------------------------------------------
 
 function isEqualArray(arr1: any[], arr2: any[]) {
@@ -396,20 +472,4 @@ function isEqualArray(arr1: any[], arr2: any[]) {
   }
 
   return ret;
-}
-
-// --- ticker --------------------------------------------------------
-
-function createTicker(): () => Date;
-function createTicker<T>(mapper: (time: Date) => T): () => T;
-
-function createTicker(mapper?: (time: Date) => any): any {
-  const now = () => new Date();
-  const [getTime, setTime] = stateVal(now());
-
-  interval(() => {
-    setTime(now());
-  }, 1000);
-
-  return mapper ? () => mapper(getTime()) : getTime();
 }

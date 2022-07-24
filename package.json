@@ -71,6 +71,7 @@
     "history": "4.10.1",
     "js-immutables": "0.0.5",
     "js-spec": "^0.1.79",
+    "lit": "^2.2.8",
     "preact-router": "^4.1.0",
     "rollup": "^2.77.0",
     "rollup-plugin-commonjs": "^10.1.0",

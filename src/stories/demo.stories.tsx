@@ -1,8 +1,10 @@
 /** @jsx h */
+import { ReactiveControllerHost } from 'lit';
 import { h, createContext, createRef, RefObject } from 'preact';
 
 import {
   component,
+  create,
   createMemo,
   stateVal,
   stateObj,
@@ -27,6 +29,7 @@ export const clockDemo = () => <ClockDemo />;
 export const memoDemo = () => <MemoDemo />;
 export const intervalDemo = () => <IntervalDemo />;
 export const contextDemo = () => <ContextDemo />;
+export const mousePositionDemo = () => <MousePositionDemo />;
 export const promiseDemo = () => <PromiseDemo />;
 
 // === Simple counter demo ===========================================
@@ -240,12 +243,63 @@ const LocaleText = component<{
   );
 });
 
+// === mouse position demo / ReactiveContoller demo ==================
+
+class MousePosController {
+  #valid = false;
+  #x = -1;
+  #y = -1;
+
+  constructor(host: ReactiveControllerHost) {
+    const mouseMoveListener = (ev: MouseEvent) => {
+      this.#valid = true;
+      this.#x = ev.clientX;
+      this.#y = ev.clientY;
+      host.requestUpdate();
+    };
+
+    host.addController({
+      hostConnected() {
+        window.addEventListener('mousemove', mouseMoveListener);
+      },
+
+      hostDisconnected() {
+        window.removeEventListener('mousemove', mouseMoveListener);
+      }
+    });
+  }
+
+  valid() {
+    return this.#valid;
+  }
+
+  x() {
+    return this.#x;
+  }
+
+  y() {
+    return this.#y;
+  }
+}
+
+const MousePositionDemo = component('MousePositionDemo', () => {
+  const mousePos = create(MousePosController);
+
+  return () => (
+    <div>
+      {mousePos.valid()
+        ? `Mouse position: ${mousePos.x()}x${mousePos.y()}`
+        : 'Please move mouse ...'}
+    </div>
+  );
+});
+
 // === promise demo ==================================================
 
-const Loader = component<{
+const Loader = component('Loader')<{
   loadingText?: string;
   finishText?: string;
-}>('DataLoad', (props) => {
+}>((props) => {
   const res = handlePromise(() => wait(4000));
 
   return () =>
