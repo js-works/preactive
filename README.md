@@ -53,8 +53,7 @@ render(<HelloWorld />, document.querySelector('#app'));
 
 ```tsx
 import { h, render } from 'preact';
-import { component } from 'js-preactive';
-import { preset, stateVal } from 'js-preactive/ext';
+import { component, preset, stateVal } from 'js-preactive';
 
 const Counter = component('Counter')<{
   initialCount?: number;
@@ -83,8 +82,7 @@ render(<Counter />, document.getElementById('app'));
 
 ```tsx
 import { h, render } from 'preact';
-import { component } from 'js-preactive';
-import { effect, onMount, preset, stateObj } from 'js-preactive/ext';
+import { component, effect, preset, StateObj } from 'js-preactive';
 
 const Counter = component('Counter')<{
   initialCount?: number;
@@ -100,10 +98,6 @@ const Counter = component('Counter')<{
   });
 
   const onIncrement = () => set.count((it) => it + 1);
-
-  onMount(() => {
-    console.log(`"${props.label}" has been mounted`);
-  });
 
   effect(
     () => console.log(`Value of "${props.label}": ${state.count}`),
