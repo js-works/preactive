@@ -82,7 +82,7 @@ render(<Counter />, document.getElementById('app'));
 
 ```tsx
 import { h, render } from 'preact';
-import { component, effect, preset, StateObj } from 'js-preactive';
+import { component, effect, preset, stateObj } from 'js-preactive';
 
 const Counter = component('Counter')<{
   initialCount?: number;
