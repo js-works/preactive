@@ -1,4 +1,4 @@
-# js-preactive
+# preactive
 
 A R&D project to evaluate an alternative API for developing components
 with Preact using an alternative to hook functions (called "extensions").<br>
@@ -14,8 +14,8 @@ is not meant to be used in production.
 ### Installation
 
 ```
-git clone https://github.com/js-works/js-preactive.git
-cd js-preactive
+git clone https://github.com/js-works/preactive.git
+cd preactive
 npm install
 ```
 
@@ -31,7 +31,7 @@ npm run storybook
 
 ```tsx
 import { h, render } from 'preact';
-import { component } from 'js-preactive';
+import { component } from 'preactive';
 
 const Greet = component('Greet')<{
   salutation?: string;
@@ -53,7 +53,7 @@ render(<HelloWorld />, document.querySelector('#app'));
 
 ```tsx
 import { h, render } from 'preact';
-import { component, preset, stateVal } from 'js-preactive';
+import { component, preset, stateVal } from 'preactive';
 
 const Counter = component('Counter')<{
   initialCount?: number;
@@ -82,7 +82,7 @@ render(<Counter />, document.getElementById('app'));
 
 ```tsx
 import { h, render } from 'preact';
-import { component, effect, preset, stateObj } from 'js-preactive';
+import { component, effect, preset, stateObj } from 'preactive';
 
 const Counter = component('Counter')<{
   initialCount?: number;

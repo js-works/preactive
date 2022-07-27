@@ -1,11 +1,11 @@
 {
-  "name": "js-preactive",
+  "name": "preactive",
   "version": "0.0.37",
   "description": "",
   "main": "index.js",
-  "module": "dist/js-preactive.esm.producion.js",
+  "module": "dist/preactive.esm.producion.js",
   "types": "./dist/types/index.d.ts",
-  "unpkg": "dist/js-preactive.umd.production.js",
+  "unpkg": "dist/preactive.umd.production.js",
   "files": [
     "index.js",
     "dist"
@@ -22,15 +22,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/js-works/js-preactive.git"
+    "url": "https://github.com/js-works/preactive.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/js-works/js-preactive/issues"
+    "url": "https://github.com/js-works/preactive/issues"
   },
-  "homepage": "https://github.com/js-works/js-preactive#readme",
+  "homepage": "https://github.com/js-works/preactive#readme",
   "dependencies": {
     "preact": "^10.10.0"
   },

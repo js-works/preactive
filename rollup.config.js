@@ -23,8 +23,8 @@ function createConfig(moduleFormat, productive) {
 
     output: {
       file: productive
-        ? `dist/js-preactive.${moduleFormat}.production.js`
-        : `dist/js-preactive.${moduleFormat}.development.js`,
+        ? `dist/preactive.${moduleFormat}.production.js`
+        : `dist/preactive.${moduleFormat}.development.js`,
 
       format: moduleFormat,
       sourcemap: false, //productive ? false : 'inline',

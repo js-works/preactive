@@ -27,7 +27,7 @@ type Todo = {
 
 const ENTER_KEY = 13;
 const ESC_KEY = 27;
-const STORAGE_KEY = 'todomvc::js-preactive';
+const STORAGE_KEY = 'todomvc::preactive';
 
 const todoSlice = createSlice({
   name: 'todos',
