@@ -19,8 +19,11 @@ export {
   createTicker,
   effect,
   getRefresher,
-  stateVal,
+  mutable,
+  stateFn,
   stateObj,
+  stateRef,
+  stateVal,
   interval,
   handleMethods,
   handlePromise,
@@ -145,6 +148,87 @@ function stateObj<T extends Record<string, any>>(
   }
 
   return [obj, setter];
+}
+
+// --- stateFn -------------------------------------------------------
+
+function stateFn<T>(initialValue: T): {
+  (): T;
+  (updater: Updater<T>): void;
+} {
+  let current = initialValue;
+  let next = initialValue;
+  const ctrl = getCtrl();
+
+  ctrl.beforeUpdate(() => {
+    current = next;
+  });
+
+  return function (updater?: Updater<T>) {
+    if (arguments.length === 0) {
+      return current;
+    } else {
+      next =
+        typeof updater === 'function' ? (updater as any)(current) : updater;
+
+      ctrl.refresh();
+    }
+  } as any;
+}
+
+// --- stateRef ------------------------------------------------------
+
+function stateRef<T>(initialValue: T): {
+  current: T;
+  set(value: T): void;
+  map(mapper: (value: T) => T): void;
+} {
+  let current = initialValue;
+  let next = initialValue;
+  const ctrl = getCtrl();
+
+  ctrl.beforeUpdate(() => {
+    current = next;
+  });
+
+  return {
+    get current() {
+      return current;
+    },
+
+    set(value) {
+      next = value;
+      ctrl.refresh();
+    },
+
+    map(mapper) {
+      next = mapper(next);
+      ctrl.refresh();
+    }
+  };
+}
+
+// --- mutable -------------------------------------------------------
+
+function mutable<T extends Record<string, any>>(initialState: T): T {
+  const ret = {} as T;
+  const values = { ...initialState };
+  const ctrl = getCtrl();
+
+  for (const key of Object.keys(initialState)) {
+    Object.defineProperty(ret, key, {
+      get() {
+        return values[key];
+      },
+
+      set(value: any) {
+        (values as any)[key] = value;
+        ctrl.refresh();
+      }
+    });
+  }
+
+  return ret;
 }
 
 // --- createMemo ----------------------------------------------------

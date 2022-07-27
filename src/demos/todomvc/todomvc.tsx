@@ -75,7 +75,8 @@ const todoSlice = createSlice({
 });
 
 const store = configureStore({
-  reducer: todoSlice.reducer
+  reducer: todoSlice.reducer,
+  preloadedState: { todos: loadTodos() }
 });
 
 const actions = todoSlice.actions;
@@ -296,12 +297,11 @@ const Footer = component('Footer')<{
 
 function saveTodos(todos: Todo[]) {
   try {
-    console.log(333, todos);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
   } catch {}
 }
 
-function loadTodos() {
+function loadTodos(): Todo[] {
   try {
     try {
       const storedTodos = JSON.parse(localStorage.getItem(STORAGE_KEY) as any);
@@ -336,7 +336,6 @@ const App = component('App', () => {
   effect(
     () =>
       store.subscribe(() => {
-        console.log(1111);
         saveTodos(store.getState().todos);
         refresh();
       }),

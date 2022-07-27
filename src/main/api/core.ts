@@ -13,6 +13,15 @@ import type { Context, VNode } from 'preact';
 export { component, h, render, getCtrl };
 export type { Ctrl, Props, PropsOf };
 
+// === global types ==================================================
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements extends preact.JSX.IntrinsicElements {}
+    interface IntrinsicAttributes extends preact.JSX.IntrinsicAttributes {}
+  }
+}
+
 // === exported types ================================================
 
 interface Props extends Record<string, any> {}
