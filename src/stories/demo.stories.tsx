@@ -41,8 +41,8 @@ const SimpleCounterDemo = component('SimpleCounterDemo')<{
   ref?: {
     reset(n: number): void;
   };
-}>((p) => {
-  const props = preset(p, {
+}>((props) => {
+  preset(props, {
     initialCount: 0,
     label: 'Counter'
   });
@@ -77,8 +77,8 @@ const ComplexCounter = component('ComplexCounter')<{
   componentRef?: RefObject<{
     reset(n: number): void;
   }>;
-}>((p) => {
-  const props = preset(p, {
+}>((props) => {
+  preset(props, {
     initialCount: 0,
     label: 'Counter'
   });

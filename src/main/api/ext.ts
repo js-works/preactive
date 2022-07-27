@@ -17,6 +17,7 @@ export {
   create,
   createMemo,
   createTicker,
+  defaultize,
   effect,
   getRefresher,
   mutable,
@@ -44,7 +45,7 @@ type StateObjSetter<T extends Record<string, any>> = {
 
 // === local data ====================================================
 
-// used for extension `preset`
+// used for extensions `preset` and `defaultize`
 const defaultsCache = new WeakMap<any, any>();
 
 // === extensions ====================================================
@@ -59,7 +60,41 @@ function getRefresher() {
 
 // --- preset --------------------------------------------------------
 
-function preset<T extends Record<string, any>, D extends Partial<T>>(
+function preset<P extends Record<string, any>, D extends Partial<P>>(
+  props: P,
+  defaults: D | (() => D)
+): asserts props is P & D {
+  let defaultValues: D | null = null;
+  const ctrl = getCtrl();
+
+  if (typeof defaults !== 'function') {
+    defaultValues = defaults;
+  } else {
+    let cachedDefaults = defaultsCache.get(ctrl.constructor);
+
+    if (!cachedDefaults) {
+      cachedDefaults = defaults();
+      defaultsCache.set(ctrl.constructor, cachedDefaults);
+    }
+
+    defaultValues = cachedDefaults;
+  }
+
+  const updateProps = () => {
+    for (const key in defaultValues) {
+      if (!props.hasOwnProperty(key)) {
+        (props as any)[key] = defaultValues[key];
+      }
+    }
+  };
+
+  updateProps();
+  ctrl.beforeUpdate(updateProps);
+}
+
+// --- defaultize ----------------------------------------------------
+
+function defaultize<T extends Record<string, any>, D extends Partial<T>>(
   obj: T,
   defaults: D | (() => D)
 ) {
@@ -91,6 +126,8 @@ function preset<T extends Record<string, any>, D extends Partial<T>>(
 
   return presetObj as T & D;
 }
+
+// --- stateVal ------------------------------------------------------
 
 function stateVal<T>(value: T): [Getter<T>, Setter<T>] {
   const ctrl = getCtrl();
