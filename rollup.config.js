@@ -7,9 +7,11 @@ import gzip from 'rollup-plugin-gzip';
 
 const configs = [];
 
-for (const format of ['umd', 'cjs', 'amd', 'esm']) {
-  for (const productive of [false, true]) {
-    configs.push(createConfig(format, productive));
+for (const pkg of ['core', 'ext', 'util']) {
+  for (const format of ['cjs', 'esm', 'umd' /*, 'amd' */]) {
+    for (const productive of [/*false, */ true]) {
+      configs.push(createConfig(pkg, format, productive));
+    }
   }
 }
 
@@ -17,18 +19,20 @@ export default configs;
 
 // --- locals -------------------------------------------------------
 
-function createConfig(moduleFormat, productive) {
+function createConfig(pkg, moduleFormat, productive) {
   return {
-    input: `src/main/index.ts`,
+    input: `src/main/${pkg}.ts`,
 
     output: {
-      file: productive
-        ? `dist/preactive.${moduleFormat}.production.js`
-        : `dist/preactive.${moduleFormat}.development.js`,
+      // file: productive
+      //  ? `dist/preactive.${moduleFormat}.production.js`
+      //  : `dist/preactive.${moduleFormat}.development.js`,
+
+      file: `dist/preactive.${pkg}.${moduleFormat}.js`,
 
       format: moduleFormat,
       sourcemap: false, //productive ? false : 'inline',
-      name: 'jsPreactive',
+      name: 'preactive',
 
       globals: {
         preact: 'preact'

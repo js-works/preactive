@@ -17,7 +17,6 @@ export {
   create,
   createMemo,
   createTicker,
-  defaultize,
   effect,
   getRefresher,
   mutable,
@@ -27,8 +26,7 @@ export {
   stateVal,
   interval,
   handleMethods,
-  handlePromise,
-  preset
+  handlePromise
 };
 
 // === types =========================================================
@@ -43,11 +41,6 @@ type StateObjSetter<T extends Record<string, any>> = {
   [K in keyof T]: (updater: Updater<T[K]>) => void;
 };
 
-// === local data ====================================================
-
-// used for extensions `preset` and `defaultize`
-const defaultsCache = new WeakMap<any, any>();
-
 // === extensions ====================================================
 
 // --- getRefresher --------------------------------------------------
@@ -56,75 +49,6 @@ function getRefresher() {
   const ctrl = getCtrl();
 
   return () => ctrl.refresh();
-}
-
-// --- preset --------------------------------------------------------
-
-function preset<P extends Record<string, any>, D extends Partial<P>>(
-  props: P,
-  defaults: D | (() => D)
-): asserts props is P & D {
-  let defaultValues: D | null = null;
-  const ctrl = getCtrl();
-
-  if (typeof defaults !== 'function') {
-    defaultValues = defaults;
-  } else {
-    let cachedDefaults = defaultsCache.get(ctrl.constructor);
-
-    if (!cachedDefaults) {
-      cachedDefaults = defaults();
-      defaultsCache.set(ctrl.constructor, cachedDefaults);
-    }
-
-    defaultValues = cachedDefaults;
-  }
-
-  const updateProps = () => {
-    for (const key in defaultValues) {
-      if (!props.hasOwnProperty(key)) {
-        (props as any)[key] = defaultValues[key];
-      }
-    }
-  };
-
-  updateProps();
-  ctrl.beforeUpdate(updateProps);
-}
-
-// --- defaultize ----------------------------------------------------
-
-function defaultize<T extends Record<string, any>, D extends Partial<T>>(
-  obj: T,
-  defaults: D | (() => D)
-) {
-  const ctrl = getCtrl();
-  let defaultValues: D | null = null;
-
-  if (typeof defaults !== 'function') {
-    defaultValues = defaults;
-  } else {
-    let cachedDefaults = defaultsCache.get(ctrl.constructor);
-
-    if (!cachedDefaults) {
-      cachedDefaults = defaults();
-      defaultsCache.set(ctrl.constructor, cachedDefaults);
-    }
-
-    defaultValues = cachedDefaults;
-  }
-
-  const presetObj = Object.assign({}, defaultValues, obj);
-
-  ctrl.beforeUpdate(() => {
-    for (const key in presetObj) {
-      delete presetObj[key];
-    }
-
-    Object.assign(presetObj, defaultValues, obj);
-  });
-
-  return presetObj as T & D;
 }
 
 // --- stateVal ------------------------------------------------------

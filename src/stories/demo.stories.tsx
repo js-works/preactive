@@ -1,9 +1,9 @@
 /** @jsx h */
 import { ReactiveControllerHost } from 'lit';
 import { h, createContext, createRef, RefObject } from 'preact';
+import { component, preset, PropsOf } from '../main/core';
 
 import {
-  component,
   create,
   createMemo,
   stateVal,
@@ -14,10 +14,8 @@ import {
   handleMethods,
   handlePromise,
   getRefresher,
-  createTicker,
-  preset,
-  PropsOf
-} from '../main/index';
+  createTicker
+} from '../main/ext';
 
 export default {
   title: 'Demos'
@@ -37,10 +35,6 @@ export const promiseDemo = () => <PromiseDemo />;
 const SimpleCounterDemo = component('SimpleCounterDemo')<{
   initialCount?: number;
   label?: string;
-
-  ref?: {
-    reset(n: number): void;
-  };
 }>((props) => {
   preset(props, {
     initialCount: 0,

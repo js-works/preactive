@@ -1,12 +1,11 @@
 /** @jsx h */
 import { createRef, h, RefObject } from 'preact';
-import { component, render } from '../../main/api/core';
-import { getRefresher, effect, stateObj } from '../../main/api/ext';
+import { component, render } from '../../main/core';
+import { getRefresher, effect, stateObj } from '../../main/ext';
 import { Router, Link } from 'preact-router';
 import { configureStore, createSlice, PayloadAction } from '@reduxjs/toolkit';
 // @ts-ignore
 import { createHashHistory } from 'history';
-import classNames from 'classnames';
 import 'preact/debug';
 
 // --- types ---------------------------------------------------------
@@ -160,10 +159,9 @@ const TodoItem = component('TodoItem')<{
   });
 
   return () => {
-    const classes = classNames({
-      editing: state.active,
-      completed: props.todo.completed
-    });
+    const classes =
+      (state.active ? 'editing ' : '') +
+      (props.todo.completed ? 'completed' : '');
 
     return (
       <li className={classes}>
@@ -236,7 +234,9 @@ const Main = component('Main')<{
 
 const Filters = component('Filters')<{
   filter: TodoFilter;
-}>(({ filter }) => {
+}>((props) => {
+  const { filter } = props;
+
   return (
     <ul className="filters">
       <li>

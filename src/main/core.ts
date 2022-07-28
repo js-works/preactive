@@ -10,7 +10,7 @@ import type { Context, VNode } from 'preact';
 
 // === exports =======================================================
 
-export { component, h, render, getCtrl };
+export { component, h, preset, render, getCtrl };
 export type { Ctrl, Props, PropsOf };
 
 // === global types ==================================================
@@ -66,6 +66,9 @@ const preactComponentKey = Symbol('preactComponent');
 // === local data ====================================================
 
 let getCurrentCtrl: (() => Ctrl) | null = null;
+const defaultsCache = new WeakMap<any, any>();
+
+// --- preset --------------------------------------------------------
 
 // === local classes and functions ===================================
 
@@ -283,4 +286,36 @@ function h<P extends Props>(
   }
 
   return createElement(preactComponent, props, ...children);
+}
+
+function preset<P extends Record<string, any>, D extends Partial<P>>(
+  props: P,
+  defaults: D | (() => D)
+): asserts props is P & D {
+  let defaultValues: D | null = null;
+  const ctrl = getCtrl();
+
+  if (typeof defaults !== 'function') {
+    defaultValues = defaults;
+  } else {
+    let cachedDefaults = defaultsCache.get(ctrl.constructor);
+
+    if (!cachedDefaults) {
+      cachedDefaults = defaults();
+      defaultsCache.set(ctrl.constructor, cachedDefaults);
+    }
+
+    defaultValues = cachedDefaults;
+  }
+
+  const updateProps = () => {
+    for (const key in defaultValues) {
+      if (!props.hasOwnProperty(key)) {
+        (props as any)[key] = defaultValues[key];
+      }
+    }
+  };
+
+  updateProps();
+  ctrl.beforeUpdate(updateProps);
 }

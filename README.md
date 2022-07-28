@@ -53,13 +53,14 @@ render(<HelloWorld />, document.querySelector('#app'));
 
 ```tsx
 import { h, render } from 'preact';
-import { component, preset, stateVal } from 'preactive';
+import { component, preset } from 'preactive';
+import { stateVal } from 'preactive/ext';
 
 const Counter = component('Counter')<{
   initialCount?: number;
   label?: string;
-}>((p) => {
-  const props = preset(p, () => ({
+}>((props) => {
+  preset(props, () => ({
     initialCount: 0,
     label: 'Counter'
   }));
@@ -82,13 +83,14 @@ render(<Counter />, document.getElementById('app'));
 
 ```tsx
 import { h, render } from 'preact';
-import { component, effect, preset, stateObj } from 'preactive';
+import { component, preset } from 'preactive';
+import { effect, stateObj } from 'preactive/ext';
 
 const Counter = component('Counter')<{
   initialCount?: number;
   label?: string;
-}>((p) => {
-  const props = preset(p, () => ({
+}>((props) => {
+  preset(props, () => ({
     initialCount: 0,
     label: 'Counter'
   }));
@@ -117,12 +119,13 @@ render(<Counter />, document.getElementById('app'));
 
 ## API
 
-### Component definition
+### Core functions
 
 - `component(displayName, render: props => vnode): ComponentClass`
 - `component(displayName, init: props => () => vnode): ComponentClass`
 - `component(displayName): (render: props => vnode) => ComponentClass`
 - `component(displayName): (init: props => () => vnode) => ComponentClass`
+- `preset(props, defaultProps or getDefaultProps)`
 
 ### Utility functions
 
@@ -130,7 +133,6 @@ render(<Counter />, document.getElementById('app'));
 
 ### Extensions
 
-- `preset(props, defaultProps or getDefaultProps)`
 - `stateVal(initialValue)`
 - `stateObj(initialValues)`
 - `createMemo(calculation, getDependencies)`
