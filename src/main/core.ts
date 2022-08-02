@@ -10,7 +10,7 @@ import type { Context, VNode } from 'preact';
 
 // === exports =======================================================
 
-export { component, h, preset, render, getCtrl };
+export { component, h, render, getCtrl };
 export type { Ctrl, Props, PropsOf };
 
 // === global types ==================================================
@@ -35,7 +35,8 @@ interface Ctrl {
   beforeUpdate(task: () => void): void;
   afterUpdate(task: () => void): void;
   beforeUnmount(task: () => void): void;
-  refresh(): void;
+  update(force?: boolean): void;
+  shouldUpdate(pred: (prevProps: Props, nextProps: Props) => boolean): void;
   consumeContext<T>(ctx: Context<T>): () => T;
 }
 
@@ -66,7 +67,6 @@ const preactComponentKey = Symbol('preactComponent');
 // === local data ====================================================
 
 let getCurrentCtrl: (() => Ctrl) | null = null;
-const defaultsCache = new WeakMap<any, any>();
 
 // --- preset --------------------------------------------------------
 
@@ -83,7 +83,7 @@ class Controller implements Ctrl {
   };
 
   constructor(
-    component: BaseComponent<any>,
+    component: BaseComponent<Props & unknown>,
     setLifecycleEventHandler: (handler: LifecycleEventHandler) => void
   ) {
     this.#component = component;
@@ -109,8 +109,20 @@ class Controller implements Ctrl {
     this.#lifecycle.beforeUnmount.push(task);
   }
 
-  refresh() {
-    this.#component.forceUpdate();
+  update(forced = false) {
+    if (forced) {
+      this.#component.forceUpdate();
+    } else {
+      this.#component.setState((state) => ({ toggle: !state.toggle }));
+    }
+  }
+
+  shouldUpdate(
+    pred: (prevProps: Props & unknown, nextProps: Props & unknown) => boolean
+  ) {
+    this.#component.shouldComponentUpdate = (nextProps) => {
+      return pred(this.#component.props, nextProps);
+    };
   }
 
   consumeContext<T>(ctx: Context<T>): () => T {
@@ -125,7 +137,10 @@ class Controller implements Ctrl {
   }
 }
 
-class BaseComponent<P extends Props> extends PreactComponent<P> {
+class BaseComponent<P extends Props> extends PreactComponent<
+  P,
+  { toggle: boolean }
+> {
   #ctrl!: Ctrl;
   #emit: null | ((event: LifecycleEvent) => void) = null;
   #mounted = false;
@@ -140,6 +155,7 @@ class BaseComponent<P extends Props> extends PreactComponent<P> {
     super(props);
     this.#main = main;
     this.#propsObj = { ...props };
+    this.state = { toggle: false };
   }
 
   componentDidMount() {
@@ -286,36 +302,4 @@ function h<P extends Props>(
   }
 
   return createElement(preactComponent, props, ...children);
-}
-
-function preset<P extends Record<string, any>, D extends Partial<P>>(
-  props: P,
-  defaults: D | (() => D)
-): asserts props is P & D {
-  let defaultValues: D | null = null;
-  const ctrl = getCtrl();
-
-  if (typeof defaults !== 'function') {
-    defaultValues = defaults;
-  } else {
-    let cachedDefaults = defaultsCache.get(ctrl.constructor);
-
-    if (!cachedDefaults) {
-      cachedDefaults = defaults();
-      defaultsCache.set(ctrl.constructor, cachedDefaults);
-    }
-
-    defaultValues = cachedDefaults;
-  }
-
-  const updateProps = () => {
-    for (const key in defaultValues) {
-      if (!props.hasOwnProperty(key)) {
-        (props as any)[key] = defaultValues[key];
-      }
-    }
-  };
-
-  updateProps();
-  ctrl.beforeUpdate(updateProps);
 }

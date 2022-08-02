@@ -1,20 +1,22 @@
 /** @jsx h */
 import { ReactiveControllerHost } from 'lit';
 import { h, createContext, createRef, RefObject } from 'preact';
-import { component, preset, PropsOf } from '../main/core';
+import { component, PropsOf } from '../main/core';
 
 import {
+  consume,
   create,
   createMemo,
+  createTicker,
+  effect,
+  getRefresher,
   stateVal,
   stateObj,
-  effect,
-  consume,
   interval,
   handleMethods,
   handlePromise,
-  getRefresher,
-  createTicker
+  preset,
+  optimize
 } from '../main/ext';
 
 export default {

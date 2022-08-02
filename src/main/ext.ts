@@ -20,6 +20,8 @@ export {
   effect,
   getRefresher,
   mutable,
+  preset,
+  optimize,
   stateFn,
   stateObj,
   stateRef,
@@ -41,14 +43,73 @@ type StateObjSetter<T extends Record<string, any>> = {
   [K in keyof T]: (updater: Updater<T[K]>) => void;
 };
 
+// === local data ====================================================
+
+const defaultsCache = new WeakMap<any, any>();
+
 // === extensions ====================================================
+
+// --- preset --------------------------------------------------------
+
+function preset<P extends Record<string, any>, D extends Partial<P>>(
+  props: P,
+  defaults: D | (() => D)
+): asserts props is P & D {
+  let defaultValues: D | null = null;
+  const ctrl = getCtrl();
+
+  if (typeof defaults !== 'function') {
+    defaultValues = defaults;
+  } else {
+    let cachedDefaults = defaultsCache.get(ctrl.constructor);
+
+    if (!cachedDefaults) {
+      cachedDefaults = defaults();
+      defaultsCache.set(ctrl.constructor, cachedDefaults);
+    }
+
+    defaultValues = cachedDefaults;
+  }
+
+  const updateProps = () => {
+    for (const key in defaultValues) {
+      if (!props.hasOwnProperty(key)) {
+        (props as any)[key] = defaultValues[key];
+      }
+    }
+  };
+
+  updateProps();
+  ctrl.beforeUpdate(updateProps);
+}
+
+// --- optimize ------------------------------------------------------
+
+function optimize(): void;
+function optimize(pred: () => boolean): void;
+function optimize(pred?: () => boolean): void {
+  const ctrl = getCtrl();
+
+  if (arguments.length === 0) {
+    ctrl.shouldUpdate((prevProps, nextProps) => {
+      for (const key in prevProps) if (!(key in nextProps)) return true;
+
+      for (const key in nextProps)
+        if (prevProps[key] !== nextProps[key]) return true;
+
+      return false;
+    });
+  } else {
+    ctrl.shouldUpdate(() => pred!());
+  }
+}
 
 // --- getRefresher --------------------------------------------------
 
 function getRefresher() {
   const ctrl = getCtrl();
 
-  return () => ctrl.refresh();
+  return () => ctrl.update();
 }
 
 // --- stateVal ------------------------------------------------------
@@ -66,7 +127,7 @@ function stateVal<T>(value: T): [Getter<T>, Setter<T>] {
         ? (valueOrMapper as any)(nextVal)
         : valueOrMapper;
 
-    ctrl.refresh();
+    ctrl.update();
   };
 
   ctrl.beforeUpdate(() => void (currVal = nextVal));
@@ -96,7 +157,7 @@ function stateObj<T extends Record<string, any>>(
 
     Object.assign(clone, values);
     merge = true;
-    ctrl.refresh();
+    ctrl.update();
   }) as any;
 
   for (const key of Object.keys(obj)) {
@@ -104,7 +165,7 @@ function stateObj<T extends Record<string, any>>(
       (clone as any)[key] =
         typeof updater === 'function' ? (updater as any)(clone[key]) : updater;
       merge = true;
-      ctrl.refresh();
+      ctrl.update();
     };
   }
 
@@ -132,7 +193,7 @@ function stateFn<T>(initialValue: T): {
       next =
         typeof updater === 'function' ? (updater as any)(current) : updater;
 
-      ctrl.refresh();
+      ctrl.update();
     }
   } as any;
 }
@@ -159,12 +220,12 @@ function stateRef<T>(initialValue: T): {
 
     set(value) {
       next = value;
-      ctrl.refresh();
+      ctrl.update();
     },
 
     map(mapper) {
       next = mapper(next);
-      ctrl.refresh();
+      ctrl.update();
     }
   };
 }
@@ -184,7 +245,7 @@ function mutable<T extends Record<string, any>>(initialState: T): T {
 
       set(value: any) {
         (values as any)[key] = value;
-        ctrl.refresh();
+        ctrl.update();
       }
     });
   }
@@ -493,7 +554,7 @@ class Host implements ReactiveControllerHost {
   }
 
   requestUpdate(): void {
-    this.#ctrl.refresh();
+    this.#ctrl.update();
   }
 
   get updateComplete() {
