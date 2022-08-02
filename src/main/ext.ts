@@ -43,9 +43,17 @@ type StateObjSetter<T extends Record<string, any>> = {
   [K in keyof T]: (updater: Updater<T[K]>) => void;
 };
 
-// === main ==========================================================
+// === interception logic ============================================
 
 let getCurrCtrl: (() => Ctrl) | null = null;
+
+function getCtrl() {
+  if (!getCurrCtrl) {
+    throw Error('Extension has been called outside of component function');
+  }
+
+  return getCurrCtrl();
+}
 
 intercept({
   onInit(next, getCtrl) {
@@ -54,17 +62,6 @@ intercept({
       next();
     } finally {
       getCurrCtrl = null;
-    }
-  }
-});
-
-intercept({
-  onInit(next, getCtrl) {
-    try {
-      console.log('start');
-      next();
-    } finally {
-      console.log('end');
     }
   }
 });
@@ -587,14 +584,6 @@ class Host implements ReactiveControllerHost {
 }
 
 // --- locals --------------------------------------------------------
-
-function getCtrl() {
-  if (!getCurrCtrl) {
-    throw Error('Extension has been called outside of component function');
-  }
-
-  return getCurrCtrl();
-}
 
 function isEqualArray(arr1: any[], arr2: any[]) {
   let ret =
