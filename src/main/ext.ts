@@ -56,7 +56,7 @@ function getCtrl() {
 }
 
 intercept({
-  onInit(next, getCtrl) {
+  onMain(next, getCtrl) {
     try {
       getCurrCtrl = getCtrl;
       next();

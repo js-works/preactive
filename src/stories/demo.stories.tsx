@@ -3,6 +3,8 @@ import { ReactiveControllerHost } from 'lit';
 import { h, createContext, createRef, RefObject } from 'preact';
 import { component, PropsOf } from '../main/core';
 
+import { useEffect, useState } from '../main/hooks';
+
 import {
   consume,
   create,
@@ -23,6 +25,7 @@ export default {
 };
 
 export const simpleCounterDemo = () => <SimpleCounterDemo />;
+export const simpleCounterDemo2 = () => <SimpleCounterDemo2 />;
 export const complexCounterDemo = () => <ComplexCounterDemo />;
 export const clockDemo = () => <ClockDemo />;
 export const memoDemo = () => <MemoDemo />;
@@ -59,6 +62,29 @@ const SimpleCounterDemo = component('SimpleCounterDemo')<{
       <label>{props.label}: </label>
       <input type="number" value={getCount()} onInput={onInput} />
       <button onClick={onIncrement}>{getCount()}</button>
+    </div>
+  );
+});
+
+// === Simple counter demo 2 =========================================
+
+const SimpleCounterDemo2 = component('SimpleCounterDemo2')<{
+  initialCount?: number;
+  label?: string;
+}>(({ initialCount = 0, label = 'Counter' }) => {
+  const [count, setCount] = useState(initialCount);
+  const onIncrement = () => setCount((it) => it + 1);
+
+  useEffect(() => {
+    console.log(`Value of "${label}": ${count}`);
+  }, [label, count]);
+
+  return (
+    <div>
+      <h3>Simple counter demo 2:</h3>
+      <button onClick={onIncrement}>
+        {label}: {count}
+      </button>
     </div>
   );
 });

@@ -66,7 +66,7 @@ const keyContextDefaultValue = isMinimized ? '__' : '_defaultValue';
 
 // === local data ====================================================
 
-let onInit: (
+let onMain: (
   next: () => void,
   getCtrl: (neededForExtensions?: boolean) => Ctrl
 ) => void = (next) => next();
@@ -127,7 +127,7 @@ class Controller implements Ctrl {
   }
 
   shouldUpdate(pred: (prevProps: Props, nextProps: Props) => boolean) {
-    this.#component.shouldComponentUpdate = (nextProps) => {
+    (this.#component as any).__shouldComponentUpdate = (nextProps: Props) => {
       return pred(this.#component.props, nextProps);
     };
   }
@@ -185,6 +185,14 @@ class BaseComponent<P extends Props> extends PreactComponent<
     this.#emit && this.#emit('beforeUnmount');
   }
 
+  shouldComponentUpdate(nextProps: P) {
+    if (!(this as any).__shouldComponentUpdate) {
+      return true;
+    }
+
+    return (this as any).__shouldComponentUpdate(this.props, nextProps);
+  }
+
   render() {
     let content: any;
 
@@ -220,7 +228,7 @@ class BaseComponent<P extends Props> extends PreactComponent<
         return this.#ctrl;
       };
 
-      onInit(() => {
+      onMain(() => {
         const result = this.#main(this.#propsObj);
 
         if (typeof result === 'function') {
@@ -248,14 +256,21 @@ class BaseComponent<P extends Props> extends PreactComponent<
       }, getCtrl);
     }
 
-    if (this.#isFactoryFunction) {
-      if (this.#mounted) {
-        this.#emit!('beforeUpdate');
-      }
+    if (this.#mounted) {
+      this.#emit!('beforeUpdate');
+    }
 
+    if (this.#isFactoryFunction) {
       return this.#render!();
     } else {
-      return content !== undefined ? content : this.#main(this.#propsObj);
+      if (content === undefined) {
+        onMain(
+          () => (content = this.#main(this.#propsObj)),
+          () => this.#ctrl
+        );
+      }
+
+      return content;
     }
   }
 }
@@ -268,7 +283,7 @@ function getComponentName(component: Function) {
 // === exported functions ============================================
 
 function intercept(params: {
-  onInit?(
+  onMain?(
     next: () => void,
     getCtrl: (neededForExtensions?: boolean) => Ctrl
   ): void;
@@ -279,12 +294,12 @@ function intercept(params: {
     props: Props
   ): void;
 }) {
-  if (params.onInit) {
-    const oldOnInit = onInit;
-    const newOnInit = params.onInit;
+  if (params.onMain) {
+    const oldOnMain = onMain;
+    const newOnMain = params.onMain;
 
-    onInit = (next, getCtrl) =>
-      void newOnInit(() => oldOnInit(next, getCtrl), getCtrl);
+    onMain = (next, getCtrl) =>
+      void newOnMain(() => oldOnMain(next, getCtrl), getCtrl);
   }
 
   if (params.onCreateElement) {

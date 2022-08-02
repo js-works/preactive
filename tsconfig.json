@@ -17,9 +17,14 @@
     "esModuleInterop": true,
     "baseUrl": ".",
     "skipLibCheck": true,
-    "paths": {},
     "typeRoots": ["node_modules/@types"],
-    "types": ["node", "mocha", "chai"]
+    "types": ["node", "mocha", "chai"],
+    "paths": {
+      "preactive/hooks": ["src/main/hooks.ts"],
+      "preactive/ext": ["src/main/ext.ts"],
+      "preactive/util": ["src/main/util.ts"],
+      "preactive": ["./src/main/core.ts"]
+    }
   },
   "files": [
     "src/main/core.ts",
