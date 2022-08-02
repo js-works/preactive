@@ -66,7 +66,10 @@ const keyContextDefaultValue = isMinimized ? '__' : '_defaultValue';
 
 // === local data ====================================================
 
-let onInit: (next: () => void, getCtrl: () => Ctrl) => void = (next) => next();
+let onInit: (
+  next: () => void,
+  getCtrl: (neededForExtensions?: boolean) => Ctrl
+) => void = (next) => next();
 
 let onCreateElement:
   | ((next: () => void, type: string | Function, props: Props) => void)
@@ -151,7 +154,9 @@ class BaseComponent<P extends Props> extends PreactComponent<
   #main: any;
   #propsObj: any;
   #render: null | (() => VNode) = null;
-  #stateful: boolean | undefined = undefined;
+  #isFactoryFunction: boolean | undefined = undefined;
+  #usesHooks = false;
+  #usesExtensions = false;
 
   constructor(props: P, main: ComponentFunc<P>) {
     super(props);
@@ -166,7 +171,7 @@ class BaseComponent<P extends Props> extends PreactComponent<
   }
 
   componentDidMount() {
-    if (this.#stateful) {
+    if (this.#ctrl) {
       this.#mounted = true;
       this.#emit && this.#emit('afterMount');
     }
@@ -183,8 +188,19 @@ class BaseComponent<P extends Props> extends PreactComponent<
   render() {
     let content: any;
 
-    if (this.#stateful === undefined) {
-      const getCtrl = () => {
+    if (this.#isFactoryFunction === undefined) {
+      const getCtrl = (neededForExtensions = false) => {
+        this.#usesExtensions ||= neededForExtensions;
+        this.#usesHooks ||= !neededForExtensions;
+
+        if (this.#usesHooks && this.#usesExtensions) {
+          throw (
+            `Component "${getComponentName(
+              this.constructor
+            )}" illegally uses hooks and ` + 'extensions at the same time'
+          );
+        }
+
         if (this.#ctrl) {
           return this.#ctrl;
         }
@@ -208,24 +224,33 @@ class BaseComponent<P extends Props> extends PreactComponent<
         const result = this.#main(this.#propsObj);
 
         if (typeof result === 'function') {
-          this.#stateful = true;
-          this.#render = result;
-        } else {
-          if (this.#ctrl) {
+          if (this.#usesHooks) {
             throw new Error(
-              'Not allowed to call extensions inside of stateless components'
+              `Component "${getComponentName(this.constructor)}" ` +
+                'uses hooks but returns a render function - this is ' +
+                'not allowed'
             );
           }
 
-          this.#stateful = false;
+          this.#isFactoryFunction = true;
+          this.#render = result;
+        } else {
+          if (this.#usesExtensions) {
+            throw new Error(
+              `Component "${component}" uses extensions but does not return ` +
+                'a render function - this is not allowed'
+            );
+          }
+
+          this.#isFactoryFunction = false;
           content = result ?? null;
         }
       }, getCtrl);
     }
 
-    if (this.#stateful) {
+    if (this.#isFactoryFunction) {
       if (this.#mounted) {
-        this.#emit && this.#emit!('beforeUpdate');
+        this.#emit!('beforeUpdate');
       }
 
       return this.#render!();
@@ -235,10 +260,18 @@ class BaseComponent<P extends Props> extends PreactComponent<
   }
 }
 
+function getComponentName(component: Function) {
+  console.log(component);
+  return (component as any).displayName || component.name;
+}
+
 // === exported functions ============================================
 
 function intercept(params: {
-  onInit?(next: () => void, getCtrl: () => Ctrl): void;
+  onInit?(
+    next: () => void,
+    getCtrl: (neededForExtensions?: boolean) => Ctrl
+  ): void;
 
   onCreateElement?(
     next: () => void,
