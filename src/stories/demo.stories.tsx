@@ -15,8 +15,7 @@ import {
   interval,
   handleMethods,
   handlePromise,
-  preset,
-  optimize
+  preset
 } from '../main/ext';
 
 export default {
@@ -38,10 +37,10 @@ const SimpleCounterDemo = component('SimpleCounterDemo')<{
   initialCount?: number;
   label?: string;
 }>((props) => {
-  preset(props, {
+  preset(props, () => ({
     initialCount: 0,
     label: 'Counter'
-  });
+  }));
 
   const [getCount, setCount] = stateVal(props.initialCount);
   const onIncrement = () => setCount((it) => it + 1);
@@ -49,7 +48,7 @@ const SimpleCounterDemo = component('SimpleCounterDemo')<{
 
   effect(
     () => {
-      console.log(`Value of "${props.label}" is now ${getCount}`);
+      console.log(`Value of "${props.label}" is now ${getCount()}`);
     },
     () => [getCount()]
   );

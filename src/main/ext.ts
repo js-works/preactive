@@ -21,7 +21,7 @@ export {
   getRefresher,
   mutable,
   preset,
-  optimize,
+  optimizeUpdates,
   stateFn,
   stateObj,
   stateRef,
@@ -43,10 +43,6 @@ type StateObjSetter<T extends Record<string, any>> = {
   [K in keyof T]: (updater: Updater<T[K]>) => void;
 };
 
-// === local data ====================================================
-
-const defaultsCache = new WeakMap<any, any>();
-
 // === extensions ====================================================
 
 // --- preset --------------------------------------------------------
@@ -55,20 +51,24 @@ function preset<P extends Record<string, any>, D extends Partial<P>>(
   props: P,
   defaults: D | (() => D)
 ): asserts props is P & D {
+  const preactClass = (props as any)?.constructor?.__preactClass;
+
+  if (typeof preactClass !== 'function') {
+    throw new TypeError('Illegal first argument for function `preset`');
+  }
+
   let defaultValues: D | null = null;
   const ctrl = getCtrl();
 
   if (typeof defaults !== 'function') {
     defaultValues = defaults;
   } else {
-    let cachedDefaults = defaultsCache.get(ctrl.constructor);
+    defaultValues = preactClass.__defaults;
 
-    if (!cachedDefaults) {
-      cachedDefaults = defaults();
-      defaultsCache.set(ctrl.constructor, cachedDefaults);
+    if (!defaultValues) {
+      defaultValues = defaults();
+      preactClass.__defaults = defaultValues;
     }
-
-    defaultValues = cachedDefaults;
   }
 
   const updateProps = () => {
@@ -83,14 +83,12 @@ function preset<P extends Record<string, any>, D extends Partial<P>>(
   ctrl.beforeUpdate(updateProps);
 }
 
-// --- optimize ------------------------------------------------------
+// --- optimizeUpdates -----------------------------------------------
 
-function optimize(): void;
-function optimize(pred: () => boolean): void;
-function optimize(pred?: () => boolean): void {
+function optimizeUpdates(pred?: () => boolean): void {
   const ctrl = getCtrl();
 
-  if (arguments.length === 0) {
+  if (!pred) {
     ctrl.shouldUpdate((prevProps, nextProps) => {
       for (const key in prevProps) if (!(key in nextProps)) return true;
 

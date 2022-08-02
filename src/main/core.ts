@@ -149,13 +149,16 @@ class BaseComponent<P extends Props> extends PreactComponent<
   #render: null | (() => VNode) = null;
   #stateful: boolean | undefined = undefined;
 
-  static #controllerBaseClasses = new WeakMap<any, any>();
-
   constructor(props: P, main: ComponentFunc<P>) {
     super(props);
-    this.#main = main;
-    this.#propsObj = { ...props };
     this.state = { toggle: false };
+    this.#main = main;
+
+    const propsObjClass = class extends Object {
+      static __preactClass = this.constructor;
+    };
+
+    this.#propsObj = Object.assign(new propsObjClass(), props);
   }
 
   componentDidMount() {
@@ -179,16 +182,7 @@ class BaseComponent<P extends Props> extends PreactComponent<
     if (this.#stateful === undefined) {
       try {
         getCurrentCtrl = () => {
-          let ctrlBaseClass = BaseComponent.#controllerBaseClasses.get(
-            this.#main
-          );
-
-          if (!ctrlBaseClass) {
-            ctrlBaseClass = class Ctrl extends Controller {};
-            BaseComponent.#controllerBaseClasses.set(this.#main, ctrlBaseClass);
-          }
-
-          this.#ctrl = new ctrlBaseClass(this, (handler: any) => {
+          this.#ctrl = new Controller(this, (handler: any) => {
             this.#emit = handler;
           });
 
