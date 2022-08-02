@@ -36,8 +36,8 @@ interface Ctrl {
   beforeUpdate(task: () => void): void;
   afterUpdate(task: () => void): void;
   beforeUnmount(task: () => void): void;
-  update(force?: boolean): void;
   shouldUpdate(pred: (prevProps: Props, nextProps: Props) => boolean): void;
+  getUpdater: () => (force?: boolean) => void;
   consumeContext<T>(ctx: Context<T>): () => T;
 }
 
@@ -84,6 +84,14 @@ class Controller implements Ctrl {
     beforeUnmount: []
   };
 
+  #update = (force = false) => {
+    if (force) {
+      this.#component.forceUpdate();
+    } else {
+      this.#component.setState((state) => ({ toggle: !state.toggle }));
+    }
+  };
+
   constructor(
     component: BaseComponent<Props & unknown>,
     setLifecycleEventHandler: (handler: LifecycleEventHandler) => void
@@ -111,12 +119,8 @@ class Controller implements Ctrl {
     this.#lifecycle.beforeUnmount.push(task);
   }
 
-  update(forced = false) {
-    if (forced) {
-      this.#component.forceUpdate();
-    } else {
-      this.#component.setState((state) => ({ toggle: !state.toggle }));
-    }
+  getUpdater(forced = false) {
+    return this.#update;
   }
 
   shouldUpdate(pred: (prevProps: Props, nextProps: Props) => boolean) {

@@ -127,16 +127,15 @@ function optimizeUpdates(pred?: () => boolean): void {
 
 // --- getRefresher --------------------------------------------------
 
-function getRefresher() {
-  const ctrl = getCtrl();
-
-  return () => ctrl.update();
+function getRefresher(): (force?: boolean) => void {
+  return getCtrl().getUpdater();
 }
 
 // --- stateVal ------------------------------------------------------
 
 function stateVal<T>(value: T): [Getter<T>, Setter<T>] {
   const ctrl = getCtrl();
+  const update = ctrl.getUpdater();
   let currVal: T = value;
   let nextVal: T = value;
 
@@ -148,7 +147,7 @@ function stateVal<T>(value: T): [Getter<T>, Setter<T>] {
         ? (valueOrMapper as any)(nextVal)
         : valueOrMapper;
 
-    ctrl.update();
+    update();
   };
 
   ctrl.beforeUpdate(() => void (currVal = nextVal));
@@ -159,6 +158,7 @@ function stateObj<T extends Record<string, any>>(
   values: T
 ): [T, StateObjSetter<T>] {
   const ctrl = getCtrl();
+  const update = ctrl.getUpdater();
   const obj = { ...values };
   const clone = { ...values };
 
@@ -178,7 +178,7 @@ function stateObj<T extends Record<string, any>>(
 
     Object.assign(clone, values);
     merge = true;
-    ctrl.update();
+    update();
   }) as any;
 
   for (const key of Object.keys(obj)) {
@@ -186,7 +186,7 @@ function stateObj<T extends Record<string, any>>(
       (clone as any)[key] =
         typeof updater === 'function' ? (updater as any)(clone[key]) : updater;
       merge = true;
-      ctrl.update();
+      update();
     };
   }
 
@@ -202,6 +202,7 @@ function stateFn<T>(initialValue: T): {
   let current = initialValue;
   let next = initialValue;
   const ctrl = getCtrl();
+  const update = ctrl.getUpdater();
 
   ctrl.beforeUpdate(() => {
     current = next;
@@ -214,7 +215,7 @@ function stateFn<T>(initialValue: T): {
       next =
         typeof updater === 'function' ? (updater as any)(current) : updater;
 
-      ctrl.update();
+      update();
     }
   } as any;
 }
@@ -229,6 +230,7 @@ function stateRef<T>(initialValue: T): {
   let current = initialValue;
   let next = initialValue;
   const ctrl = getCtrl();
+  const update = ctrl.getUpdater();
 
   ctrl.beforeUpdate(() => {
     current = next;
@@ -241,12 +243,12 @@ function stateRef<T>(initialValue: T): {
 
     set(value) {
       next = value;
-      ctrl.update();
+      update();
     },
 
     map(mapper) {
       next = mapper(next);
-      ctrl.update();
+      update();
     }
   };
 }
@@ -256,7 +258,7 @@ function stateRef<T>(initialValue: T): {
 function mutable<T extends Record<string, any>>(initialState: T): T {
   const ret = {} as T;
   const values = { ...initialState };
-  const ctrl = getCtrl();
+  const update = getCtrl().getUpdater();
 
   for (const key of Object.keys(initialState)) {
     Object.defineProperty(ret, key, {
@@ -266,7 +268,7 @@ function mutable<T extends Record<string, any>>(initialState: T): T {
 
       set(value: any) {
         (values as any)[key] = value;
-        ctrl.update();
+        update();
       }
     });
   }
@@ -541,11 +543,11 @@ function create<C extends ControllerClass<any, A>, A extends any[]>(
 }
 
 class Host implements ReactiveControllerHost {
-  #ctrl: Ctrl;
+  #update: () => void;
   #controllers = new Set<ReactiveController>();
 
   constructor(ctrl: Ctrl) {
-    this.#ctrl = ctrl;
+    this.#update = ctrl.getUpdater();
 
     ctrl.afterMount(() => {
       this.#controllers.forEach((it) => it.hostConnected && it.hostConnected());
@@ -575,7 +577,7 @@ class Host implements ReactiveControllerHost {
   }
 
   requestUpdate(): void {
-    this.#ctrl.update();
+    this.#update();
   }
 
   get updateComplete() {
