@@ -1,6 +1,7 @@
 import {
   createElement,
   render as preactRender,
+  options,
   Component as PreactComponent,
   ComponentClass,
   JSX
@@ -62,13 +63,14 @@ type LifecycleEventHandler = (event: LifecycleEvent) => void;
 const isMinimized = PreactComponent.name !== 'Component';
 const keyContextId = isMinimized ? '__c' : '_id';
 const keyContextDefaultValue = isMinimized ? '__' : '_defaultValue';
-const preactComponentKey = Symbol('preactComponent');
 
 // === local data ====================================================
 
-let onInit = (next: () => void, getCtrl: () => Ctrl) => {
-  next();
-};
+let onInit: (next: () => void, getCtrl: () => Ctrl) => void = (next) => next();
+
+let onCreateElement:
+  | ((next: () => void, type: string | Function, props: Props) => void)
+  | null = null;
 
 // === local classes and functions ===================================
 
@@ -233,6 +235,12 @@ class BaseComponent<P extends Props> extends PreactComponent<
 
 function intercept(params: {
   onInit?(next: () => void, getCtrl: () => Ctrl): void;
+
+  onCreateElement?(
+    next: () => void,
+    type: string | Function,
+    props: Props
+  ): void;
 }) {
   if (params.onInit) {
     const oldOnInit = onInit;
@@ -240,6 +248,37 @@ function intercept(params: {
 
     onInit = (next, getCtrl) =>
       void newOnInit(() => oldOnInit(next, getCtrl), getCtrl);
+  }
+
+  if (params.onCreateElement) {
+    if (!onCreateElement) {
+      const noop = () => {};
+      onCreateElement = noop;
+
+      options.vnode = (vnode) => {
+        let type = vnode.type;
+
+        if (typeof type === 'function') {
+          const type2 = (type as any).__preactClass;
+
+          if (type2) {
+            type = type2;
+          }
+        }
+
+        onCreateElement!(noop, vnode.type, vnode.props);
+      };
+    }
+
+    const oldOnCreateElement = onCreateElement;
+    const newOnCreateElement = params.onCreateElement;
+
+    onCreateElement = (next, type, props) =>
+      void newOnCreateElement(
+        () => oldOnCreateElement(next, type, props),
+        type,
+        props
+      );
   }
 }
 
@@ -290,12 +329,12 @@ function h<P extends Props>(
     return createElement(type, props, ...children);
   }
 
-  let preactComponent: any = (type as any)[preactComponentKey];
+  let preactClass: any = (type as any).__preactClass;
 
-  if (!preactComponent) {
-    preactComponent = component(type.name, type);
-    (type as any)[preactComponentKey] = preactComponent;
+  if (!preactClass) {
+    preactClass = component(type.name, type);
+    (type as any).__preactClass = preactClass;
   }
 
-  return createElement(preactComponent, props, ...children);
+  return createElement(preactClass, props, ...children);
 }
