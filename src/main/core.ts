@@ -10,7 +10,7 @@ import type { Context, VNode } from 'preact';
 
 // === exports =======================================================
 
-export { component, h, render, getCtrl };
+export { component, h, intercept, render };
 export type { Ctrl, Props, PropsOf };
 
 // === global types ==================================================
@@ -58,7 +58,7 @@ type LifecycleEventHandler = (event: LifecycleEvent) => void;
 
 // ===  constants ====================================================
 
-// Brrrr, this is horrible as hell - please fix asap!!!!
+// Brrrr, this is horrible as hell - but what shall we do?
 const isMinimized = PreactComponent.name !== 'Component';
 const keyContextId = isMinimized ? '__c' : '_id';
 const keyContextDefaultValue = isMinimized ? '__' : '_defaultValue';
@@ -66,9 +66,9 @@ const preactComponentKey = Symbol('preactComponent');
 
 // === local data ====================================================
 
-let getCurrentCtrl: (() => Ctrl) | null = null;
-
-// --- preset --------------------------------------------------------
+let onInit = (next: () => void, getCtrl: () => Ctrl) => {
+  next();
+};
 
 // === local classes and functions ===================================
 
@@ -117,9 +117,7 @@ class Controller implements Ctrl {
     }
   }
 
-  shouldUpdate(
-    pred: (prevProps: Props & unknown, nextProps: Props & unknown) => boolean
-  ) {
+  shouldUpdate(pred: (prevProps: Props, nextProps: Props) => boolean) {
     this.#component.shouldComponentUpdate = (nextProps) => {
       return pred(this.#component.props, nextProps);
     };
@@ -180,25 +178,27 @@ class BaseComponent<P extends Props> extends PreactComponent<
     let content: any;
 
     if (this.#stateful === undefined) {
-      try {
-        getCurrentCtrl = () => {
-          this.#ctrl = new Controller(this, (handler: any) => {
-            this.#emit = handler;
-          });
-
-          this.#ctrl.beforeUpdate(() => {
-            for (const key in this.#propsObj) {
-              delete this.#propsObj[key];
-            }
-
-            Object.assign(this.#propsObj, this.props);
-          });
-
-          getCurrentCtrl = () => this.#ctrl;
-
+      const getCtrl = () => {
+        if (this.#ctrl) {
           return this.#ctrl;
-        };
+        }
 
+        this.#ctrl = new Controller(this, (handler: any) => {
+          this.#emit = handler;
+        });
+
+        this.#ctrl.beforeUpdate(() => {
+          for (const key in this.#propsObj) {
+            delete this.#propsObj[key];
+          }
+
+          Object.assign(this.#propsObj, this.props);
+        });
+
+        return this.#ctrl;
+      };
+
+      onInit(() => {
         const result = this.#main(this.#propsObj);
 
         if (typeof result === 'function') {
@@ -214,9 +214,7 @@ class BaseComponent<P extends Props> extends PreactComponent<
           this.#stateful = false;
           content = result ?? null;
         }
-      } finally {
-        getCurrentCtrl = null;
-      }
+      }, getCtrl);
     }
 
     if (this.#stateful) {
@@ -233,12 +231,16 @@ class BaseComponent<P extends Props> extends PreactComponent<
 
 // === exported functions ============================================
 
-function getCtrl(): Ctrl {
-  if (!getCurrentCtrl) {
-    throw new Error('Extension has been called outside of component function');
-  }
+function intercept(params: {
+  onInit?(next: () => void, getCtrl: () => Ctrl): void;
+}) {
+  if (params.onInit) {
+    const oldOnInit = onInit;
+    const newOnInit = params.onInit;
 
-  return getCurrentCtrl();
+    onInit = (next, getCtrl) =>
+      void newOnInit(() => oldOnInit(next, getCtrl), getCtrl);
+  }
 }
 
 function render(content: VNode, container: Element | string) {

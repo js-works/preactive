@@ -1,6 +1,6 @@
 import type { ReactiveControllerHost, ReactiveController } from 'lit';
 import { Context, Ref, RefObject } from 'preact';
-import { getCtrl, Ctrl } from './core';
+import { intercept, Ctrl } from './core';
 
 // === types =========================================================
 
@@ -42,6 +42,32 @@ type StateObjSetter<T extends Record<string, any>> = {
 } & {
   [K in keyof T]: (updater: Updater<T[K]>) => void;
 };
+
+// === main ==========================================================
+
+let getCurrCtrl: (() => Ctrl) | null = null;
+
+intercept({
+  onInit(next, getCtrl) {
+    try {
+      getCurrCtrl = getCtrl;
+      next();
+    } finally {
+      getCurrCtrl = null;
+    }
+  }
+});
+
+intercept({
+  onInit(next, getCtrl) {
+    try {
+      console.log('start');
+      next();
+    } finally {
+      console.log('end');
+    }
+  }
+});
 
 // === extensions ====================================================
 
@@ -561,6 +587,14 @@ class Host implements ReactiveControllerHost {
 }
 
 // --- locals --------------------------------------------------------
+
+function getCtrl() {
+  if (!getCurrCtrl) {
+    throw Error('Extension has been called outside of component function');
+  }
+
+  return getCurrCtrl();
+}
 
 function isEqualArray(arr1: any[], arr2: any[]) {
   let ret =

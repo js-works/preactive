@@ -27,29 +27,7 @@ npm run storybook
 
 ## Examples
 
-### Stateless components
-
-```tsx
-import { h, render } from 'preact';
-import { component } from 'preactive';
-
-const Greet = component('Greet')<{
-  salutation?: string;
-  name?: string;
-}>((props) => {
-  const { salutation = 'Hello', name = 'stranger' } = props;
-
-  return (
-    <div>
-      {salutation}, {name}!
-    </div>
-  );
-});
-
-render(<HelloWorld />, document.querySelector('#app'));
-```
-
-### Stateful components
+### Simple counter
 
 ```tsx
 import { h, render } from 'preact';
