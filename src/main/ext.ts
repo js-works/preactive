@@ -64,6 +64,12 @@ intercept({
     } finally {
       getCurrCtrl = null;
     }
+  },
+
+  onRender(next) {
+    console.log('=== render start ===');
+    next();
+    console.log('==== render end ====');
   }
 });
 

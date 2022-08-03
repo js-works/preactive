@@ -66,14 +66,16 @@ const keyContextDefaultValue = isMinimized ? '__' : '_defaultValue';
 
 // === local data ====================================================
 
+let onCreateElement:
+  | ((next: () => void, type: string | Function, props: Props) => void)
+  | null = null;
+
 let onMain: (
   next: () => void,
   getCtrl: (neededForExtensions?: boolean) => Ctrl
 ) => void = (next) => next();
 
-let onCreateElement:
-  | ((next: () => void, type: string | Function, props: Props) => void)
-  | null = null;
+let onRender: (next: () => void) => void = (next) => next();
 
 // === local classes and functions ===================================
 
@@ -88,11 +90,7 @@ class Controller implements Ctrl {
   };
 
   #update = (force = false) => {
-    if (force) {
-      this.#component.forceUpdate();
-    } else {
-      this.#component.setState((state) => ({ toggle: !state.toggle }));
-    }
+    this.#component.__update(force);
   };
 
   constructor(
@@ -146,7 +144,7 @@ class Controller implements Ctrl {
 
 class BaseComponent<P extends Props> extends PreactComponent<
   P,
-  { toggle: boolean }
+  { dummy: number }
 > {
   #ctrl!: Ctrl;
   #emit: null | ((event: LifecycleEvent) => void) = null;
@@ -160,7 +158,7 @@ class BaseComponent<P extends Props> extends PreactComponent<
 
   constructor(props: P, main: ComponentFunc<P>) {
     super(props);
-    this.state = { toggle: false };
+    this.state = { dummy: 0 };
     this.#main = main;
 
     const propsObjClass = class extends Object {
@@ -261,16 +259,38 @@ class BaseComponent<P extends Props> extends PreactComponent<
     }
 
     if (this.#isFactoryFunction) {
-      return this.#render!();
+      if (!this.#mounted) {
+        return this.#render!();
+      }
+
+      let content: any = null;
+
+      onRender(() => {
+        content = this.#render!();
+      });
+
+      return content;
     } else {
       if (content === undefined) {
         onMain(
-          () => (content = this.#main(this.#propsObj)),
+          () => {
+            onRender(() => {
+              content = this.#main(this.#propsObj);
+            });
+          },
           () => this.#ctrl
         );
       }
 
       return content;
+    }
+  }
+
+  __update(force: boolean) {
+    if (force) {
+      this.forceUpdate();
+    } else {
+      this.setState({ dummy: (this.state.dummy + 1) % 1000000000 });
     }
   }
 }
@@ -283,25 +303,19 @@ function getComponentName(component: Function) {
 // === exported functions ============================================
 
 function intercept(params: {
-  onMain?(
-    next: () => void,
-    getCtrl: (neededForExtensions?: boolean) => Ctrl
-  ): void;
-
   onCreateElement?(
     next: () => void,
     type: string | Function,
     props: Props
   ): void;
+
+  onMain?(
+    next: () => void,
+    getCtrl: (neededForExtensions?: boolean) => Ctrl
+  ): void;
+
+  onRender?(next: () => void): void;
 }) {
-  if (params.onMain) {
-    const oldOnMain = onMain;
-    const newOnMain = params.onMain;
-
-    onMain = (next, getCtrl) =>
-      void newOnMain(() => oldOnMain(next, getCtrl), getCtrl);
-  }
-
   if (params.onCreateElement) {
     if (!onCreateElement) {
       const noop = () => {};
@@ -331,6 +345,21 @@ function intercept(params: {
         type,
         props
       );
+  }
+
+  if (params.onMain) {
+    const oldOnMain = onMain;
+    const newOnMain = params.onMain;
+
+    onMain = (next, getCtrl) =>
+      void newOnMain(() => oldOnMain(next, getCtrl), getCtrl);
+  }
+
+  if (params.onRender) {
+    const oldOnRender = onRender;
+    const newOnRender = params.onRender;
+
+    onRender = (next) => void newOnRender(() => oldOnRender(next));
   }
 }
 
