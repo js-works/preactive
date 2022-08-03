@@ -39,7 +39,13 @@ function createConfig(pkg, moduleFormat, productive) {
       }
     },
 
-    external: ['preact', 'preactive'],
+    external: [
+      'preact',
+      'preactive',
+      'preactive/ext',
+      'preactive/hooks',
+      'preactive/util'
+    ],
 
     plugins: [
       resolve(),

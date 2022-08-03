@@ -1,6 +1,6 @@
 import type { ReactiveControllerHost, ReactiveController } from 'lit';
 import { Context, Ref, RefObject } from 'preact';
-import { intercept, Ctrl } from './core';
+import { intercept, Ctrl } from 'preactive';
 
 // === types =========================================================
 

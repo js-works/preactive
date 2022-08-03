@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "allowJs": true,
-    "target": "es2022",
+    "target": "es2020",
     "moduleResolution": "Node",
     "strict": true,
     "jsx": "react",
@@ -13,7 +13,7 @@
     "preserveConstEnums": true,
     "downlevelIteration": true,
     "sourceMap": false,
-    "lib": ["es2022", "dom"],
+    "lib": ["es2020", "dom"],
     "esModuleInterop": true,
     "baseUrl": ".",
     "skipLibCheck": true,
@@ -26,7 +26,12 @@
       "preactive": ["./src/main/core.ts"]
     }
   },
-  "files": ["src/main/core.ts", "src/main/ext.ts", "src/main/util.ts"],
+  "files": [
+    "src/main/core.ts",
+    "src/main/hooks.ts",
+    "src/main/ext.ts",
+    "src/main/util.ts"
+  ],
   "include": ["./src/main/*.ts"],
   "exclude": ["node_modules"]
 }
