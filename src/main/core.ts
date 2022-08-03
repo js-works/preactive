@@ -89,15 +89,15 @@ class Controller implements Ctrl {
     beforeUnmount: []
   };
 
-  #update = (force = false) => {
-    this.#component.__update(force);
-  };
+  #update: (force?: boolean) => void;
 
   constructor(
     component: BaseComponent<Props & unknown>,
+    update: (force?: boolean) => void,
     setLifecycleEventHandler: (handler: LifecycleEventHandler) => void
   ) {
     this.#component = component;
+    this.#update = update;
 
     setLifecycleEventHandler((eventName) => {
       this.#lifecycle[eventName].forEach((it) => it());
@@ -120,7 +120,7 @@ class Controller implements Ctrl {
     this.#lifecycle.beforeUnmount.push(task);
   }
 
-  getUpdater(forced = false) {
+  getUpdater() {
     return this.#update;
   }
 
@@ -156,6 +156,13 @@ class BaseComponent<P extends Props> extends PreactComponent<
   #usesHooks = false;
   #usesExtensions = false;
 
+  #update = (force?: boolean) => {
+    if (force) {
+      this.forceUpdate();
+    } else {
+      this.setState({ dummy: (this.state.dummy + 1) % 1000000000 });
+    }
+  };
   constructor(props: P, main: ComponentFunc<P>) {
     super(props);
     this.state = { dummy: 0 };
@@ -211,7 +218,7 @@ class BaseComponent<P extends Props> extends PreactComponent<
           return this.#ctrl;
         }
 
-        this.#ctrl = new Controller(this, (handler: any) => {
+        this.#ctrl = new Controller(this, this.#update, (handler: any) => {
           this.#emit = handler;
         });
 
@@ -226,32 +233,34 @@ class BaseComponent<P extends Props> extends PreactComponent<
         return this.#ctrl;
       };
 
-      onMain(() => {
-        const result = this.#main(this.#propsObj);
+      onRender(() => {
+        onMain(() => {
+          const result = this.#main(this.#propsObj);
 
-        if (typeof result === 'function') {
-          if (this.#usesHooks) {
-            throw new Error(
-              `Component "${getComponentName(this.constructor)}" ` +
-                'uses hooks but returns a render function - this is ' +
-                'not allowed'
-            );
+          if (typeof result === 'function') {
+            if (this.#usesHooks) {
+              throw new Error(
+                `Component "${getComponentName(this.constructor)}" ` +
+                  'uses hooks but returns a render function - this is ' +
+                  'not allowed'
+              );
+            }
+
+            this.#isFactoryFunction = true;
+            this.#render = result;
+          } else {
+            if (this.#usesExtensions) {
+              throw new Error(
+                `Component "${component}" uses extensions but does not return ` +
+                  'a render function - this is not allowed'
+              );
+            }
+
+            this.#isFactoryFunction = false;
+            content = result ?? null;
           }
-
-          this.#isFactoryFunction = true;
-          this.#render = result;
-        } else {
-          if (this.#usesExtensions) {
-            throw new Error(
-              `Component "${component}" uses extensions but does not return ` +
-                'a render function - this is not allowed'
-            );
-          }
-
-          this.#isFactoryFunction = false;
-          content = result ?? null;
-        }
-      }, getCtrl);
+        }, getCtrl);
+      });
     }
 
     if (this.#mounted) {
@@ -283,14 +292,6 @@ class BaseComponent<P extends Props> extends PreactComponent<
       }
 
       return content;
-    }
-  }
-
-  __update(force: boolean) {
-    if (force) {
-      this.forceUpdate();
-    } else {
-      this.setState({ dummy: (this.state.dummy + 1) % 1000000000 });
     }
   }
 }
