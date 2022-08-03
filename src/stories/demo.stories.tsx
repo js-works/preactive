@@ -2,7 +2,6 @@
 import { ReactiveControllerHost } from 'lit';
 import { h, createContext, createRef, RefObject } from 'preact';
 import { component, PropsOf } from '../main/core';
-
 import { useEffect, useState } from '../main/hooks';
 
 import {
@@ -39,8 +38,8 @@ export const promiseDemo = () => <PromiseDemo />;
 const SimpleCounterDemo = component('SimpleCounterDemo')<{
   initialCount?: number;
   label?: string;
-}>((props) => {
-  preset(props, () => ({
+}>((p) => {
+  const props = preset(p, () => ({
     initialCount: 0,
     label: 'Counter'
   }));
@@ -51,7 +50,7 @@ const SimpleCounterDemo = component('SimpleCounterDemo')<{
 
   effect(
     () => {
-      console.log(`Value of "${props.label}" is now ${getCount()}`);
+      console.log(`Value of "${props.label}": ${getCount()}`);
     },
     () => [getCount()]
   );
@@ -98,8 +97,8 @@ const ComplexCounter = component('ComplexCounter')<{
   componentRef?: RefObject<{
     reset(n: number): void;
   }>;
-}>((props) => {
-  preset(props, {
+}>((p) => {
+  const props = preset(p, {
     initialCount: 0,
     label: 'Counter'
   });
