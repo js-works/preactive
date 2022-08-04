@@ -6,7 +6,7 @@ type Ref<T> = { current: T };
 
 // === interception logic ============================================
 
-let getCurrCtrl: ((kind: 0 | 1 | 2) => ComponentCtrl) | null = null;
+let getCurrCtrl: ((intention?: 1 | 2) => ComponentCtrl) | null = null;
 let currComponentId = '';
 
 function getCtrl(): ComponentCtrl {

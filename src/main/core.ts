@@ -73,7 +73,7 @@ let onCreateElement:
 
 let onInit: (
   next: () => void,
-  getCtrl: (kind: 0 | 1 | 2) => ComponentCtrl
+  getCtrl: (intention?: 1 | 2) => ComponentCtrl
 ) => void = (next) => next();
 
 let onRender: (next: () => void, componentId: string) => void = (next) =>
@@ -226,9 +226,9 @@ class BaseComponent<P extends Props> extends PreactComponent<
     let content: any;
 
     if (this.#isFactoryFunction === undefined) {
-      const getCtrl = (kind: 0 | 1 | 2) => {
-        this.#usesExtensions ||= kind === 2;
-        this.#usesHooks ||= kind === 1;
+      const getCtrl = (intention?: 1 | 2) => {
+        this.#usesExtensions ||= intention === 2;
+        this.#usesHooks ||= intention === 1;
 
         if (this.#usesHooks && this.#usesExtensions) {
           throw (
@@ -312,7 +312,10 @@ function intercept(params: {
     props: Props
   ): void;
 
-  onInit?(next: () => void, getCtrl: (kind: 0 | 1 | 2) => ComponentCtrl): void;
+  onInit?(
+    next: () => void,
+    getCtrl: (intention?: 1 | 2) => ComponentCtrl
+  ): void;
   onRender?(next: () => void, componentId: string): void;
 }) {
   if (params.onCreateElement) {

@@ -50,7 +50,7 @@ const reactionsById: Record<string, Reaction> = {};
 
 intercept({
   onInit(next, getCtrl) {
-    const ctrl = getCtrl(0);
+    const ctrl = getCtrl();
     const update = ctrl.getUpdater();
     const id = ctrl.getId();
 

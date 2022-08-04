@@ -46,7 +46,7 @@ type StateObjSetter<T extends Record<string, any>> = {
 
 // === interception logic ============================================
 
-let getCurrCtrl: ((kind: 0 | 1 | 2) => ComponentCtrl) | null = null;
+let getCurrCtrl: ((intention?: 1 | 2) => ComponentCtrl) | null = null;
 
 function getCtrl() {
   if (!getCurrCtrl) {
