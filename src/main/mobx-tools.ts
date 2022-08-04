@@ -7,7 +7,15 @@ export { makeComponentsMobxAware };
 
 // === makeComponentsMobxAware =======================================
 
+let componentsAreMobxAware = false;
+
 function makeComponentsMobxAware() {
+  if (componentsAreMobxAware) {
+    return;
+  }
+
+  componentsAreMobxAware = true;
+
   const reactionsById: Record<string, Reaction> = {};
 
   intercept({

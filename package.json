@@ -43,7 +43,8 @@
     "dist",
     "hooks",
     "ext",
-    "util"
+    "util",
+    "mobx-tools"
   ],
   "scripts": {
     "clean": "shx rm -rf dist build",
