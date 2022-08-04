@@ -12,7 +12,7 @@ import type { Context, VNode } from 'preact';
 // === exports =======================================================
 
 export { component, h, intercept, render };
-export type { ComponentCtrl, Props, PropsOf };
+export type { ComponentCtrl, ComponentCtrlGetter, Props, PropsOf };
 
 // === global types ==================================================
 
@@ -41,6 +41,8 @@ interface ComponentCtrl {
   getUpdater: () => (force?: boolean) => void;
   consumeContext<T>(ctx: Context<T>): () => T;
 }
+
+type ComponentCtrlGetter = (intention: 0 | 1 | 2) => ComponentCtrl;
 
 type PropsOf<T extends ComponentClass<any>> = T extends ComponentClass<infer P>
   ? P
@@ -71,10 +73,8 @@ let onCreateElement:
   | ((next: () => void, type: string | Function, props: Props) => void)
   | null = null;
 
-let onInit: (
-  next: () => void,
-  getCtrl: (intention?: 1 | 2) => ComponentCtrl
-) => void = (next) => next();
+let onInit: (next: () => void, getCtrl: ComponentCtrlGetter) => void = (next) =>
+  next();
 
 let onRender: (next: () => void, componentId: string) => void = (next) =>
   next();
@@ -175,6 +175,7 @@ class BaseComponent<P extends Props> extends PreactComponent<
       this.setState({ dummy: (this.state.dummy + 1) % 1000000000 });
     }
   };
+
   constructor(props: P, main: ComponentFunc<P>) {
     super(props);
     this.state = { dummy: 0 };
@@ -226,7 +227,7 @@ class BaseComponent<P extends Props> extends PreactComponent<
     let content: any;
 
     if (this.#isFactoryFunction === undefined) {
-      const getCtrl = (intention?: 1 | 2) => {
+      const getCtrl: ComponentCtrlGetter = (intention) => {
         this.#usesExtensions ||= intention === 2;
         this.#usesHooks ||= intention === 1;
 
@@ -259,8 +260,8 @@ class BaseComponent<P extends Props> extends PreactComponent<
           } else {
             if (this.#usesExtensions) {
               throw new Error(
-                `Component "${component}" uses extensions but does not return ` +
-                  'a render function - this is not allowed'
+                `Component "${getComponentName(component)}" uses extensions ` +
+                  'but does not return a render function - this is not allowed'
               );
             }
 
@@ -276,15 +277,15 @@ class BaseComponent<P extends Props> extends PreactComponent<
     }
 
     if (this.#isFactoryFunction) {
-      if (!this.#mounted) {
-        return onRender(() => this.#render!(), this.#ctrl.getId());
-      }
-
       let content: any = null;
 
-      onRender(() => {
-        content = this.#render!();
-      }, this.#ctrl.getId());
+      if (!this.#mounted) {
+        onRender(() => (content = this.#render!()), this.#ctrl.getId());
+      } else {
+        onRender(() => {
+          content = this.#render!();
+        }, this.#ctrl.getId());
+      }
 
       return content;
     } else {
@@ -312,10 +313,7 @@ function intercept(params: {
     props: Props
   ): void;
 
-  onInit?(
-    next: () => void,
-    getCtrl: (intention?: 1 | 2) => ComponentCtrl
-  ): void;
+  onInit?(next: () => void, getCtrl: ComponentCtrlGetter): void;
   onRender?(next: () => void, componentId: string): void;
 }) {
   if (params.onCreateElement) {

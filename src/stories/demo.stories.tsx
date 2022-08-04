@@ -34,8 +34,9 @@ export const intervalDemo = () => <IntervalDemo />;
 export const contextDemo = () => <ContextDemo />;
 export const mousePositionDemo = () => <MousePositionDemo />;
 export const promiseDemo = () => <PromiseDemo />;
+export const mobxDemo = () => <MobxDemo />;
 
-// === Mobx observable ===============================================
+// Auto-updating mobx store
 
 const store = makeAutoObservable({
   count: 0,
@@ -45,9 +46,8 @@ const store = makeAutoObservable({
   }
 });
 
-setInterval(() => store.increment(), 3000);
-
 makeComponentsMobxAware();
+setInterval(() => store.increment(), 1000);
 
 // === Simple counter demo ===========================================
 
@@ -74,7 +74,6 @@ const SimpleCounterDemo = component('SimpleCounterDemo')<{
   return () => (
     <div>
       <h3>Simple counter demo:</h3>
-      {store.count}
       <label>{props.label}: </label>
       <input type="number" value={getCount()} onInput={onInput} />
       <button onClick={onIncrement}>{getCount()}</button>
@@ -98,7 +97,6 @@ const SimpleCounterDemo2 = component('SimpleCounterDemo2')<{
   return (
     <div>
       <h3>Simple counter demo 2:</h3>
-      {store.count}
       <button onClick={onIncrement}>
         {label}: {count}
       </button>
@@ -382,6 +380,33 @@ const PromiseDemo = component('PromiseDemo', () => {
       <button onClick={onRestart}>Restart</button>
       <button onClick={onToggleLoadingText}>Toggle loading text</button>
       <button onClick={onToggleFinishText}>Toggle finish text</button>
+    </div>
+  );
+});
+
+const MobxCounterInfo1 = component('MobxCounterInfo1', () => {
+  return (
+    <div>
+      <h3>Mobx counter info 1</h3>
+      Count: {store.count}
+    </div>
+  );
+});
+
+const MobxCounterInfo2 = component('MobxCounterInfo2', () => {
+  return (
+    <div>
+      <h3>Mobx counter info 2</h3>
+      Count: {store.count}
+    </div>
+  );
+});
+
+const MobxDemo = component('MobxDemo', () => {
+  return (
+    <div>
+      <MobxCounterInfo1 />
+      <MobxCounterInfo2 />
     </div>
   );
 });

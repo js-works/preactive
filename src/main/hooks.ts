@@ -1,4 +1,4 @@
-import { intercept, ComponentCtrl } from 'preactive';
+import { intercept, ComponentCtrl, ComponentCtrlGetter } from 'preactive';
 
 // === types =========================================================
 
@@ -6,7 +6,7 @@ type Ref<T> = { current: T };
 
 // === interception logic ============================================
 
-let getCurrCtrl: ((intention?: 1 | 2) => ComponentCtrl) | null = null;
+let getCurrCtrl: ComponentCtrlGetter | null = null;
 let currComponentId = '';
 
 function getCtrl(): ComponentCtrl {

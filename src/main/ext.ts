@@ -1,6 +1,11 @@
 import type { ReactiveControllerHost, ReactiveController } from 'lit';
 import { Context, Ref, RefObject } from 'preact';
-import { intercept, ComponentCtrl, Props } from 'preactive';
+import {
+  intercept,
+  ComponentCtrl,
+  Props,
+  ComponentCtrlGetter
+} from 'preactive';
 
 // === types =========================================================
 
@@ -46,7 +51,7 @@ type StateObjSetter<T extends Record<string, any>> = {
 
 // === interception logic ============================================
 
-let getCurrCtrl: ((intention?: 1 | 2) => ComponentCtrl) | null = null;
+let getCurrCtrl: ComponentCtrlGetter | null = null;
 
 function getCtrl() {
   if (!getCurrCtrl) {

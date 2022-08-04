@@ -4,6 +4,7 @@
     "target": "es2020",
     "moduleResolution": "Node",
     "strict": true,
+    "exactOptionalPropertyTypes": true,
     "jsx": "react",
     "jsxFactory": "h",
     "jsxFragmentFactory": "Fragment",
@@ -34,6 +35,6 @@
     "src/main/mobx-tools.ts",
     "src/stories/demo.stories.tsx"
   ],
-  "include": ["./src/**/*.ts*"],
+  "include": ["./src/**/*.ts*", "src/demos/todomvc/todomvc-old.xyz"],
   "exclude": ["node_modules"]
 }

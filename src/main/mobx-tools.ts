@@ -20,7 +20,7 @@ function makeComponentsMobxAware() {
 
   intercept({
     onInit(next, getCtrl) {
-      const ctrl = getCtrl();
+      const ctrl = getCtrl(0);
       const update = ctrl.getUpdater();
       const id = ctrl.getId();
 
@@ -35,7 +35,6 @@ function makeComponentsMobxAware() {
       }
 
       next();
-      //reaction.track(next);
     },
 
     onRender(next, id) {

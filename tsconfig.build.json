@@ -4,6 +4,7 @@
     "target": "es2020",
     "moduleResolution": "Node",
     "strict": true,
+    "exactOptionalPropertyTypes": true,
     "jsx": "react",
     "jsxFactory": "h",
     "jsxFragmentFactory": "Fragment",
