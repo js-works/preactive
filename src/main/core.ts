@@ -241,34 +241,34 @@ class BaseComponent<P extends Props> extends PreactComponent<
         return this.#ctrl;
       };
 
-      onRender(() => {
-        onInit(() => {
-          const result = this.#main(this.#propsObj);
+      onInit(() => {
+        //onRender(() => {
+        const result = this.#main(this.#propsObj);
 
-          if (typeof result === 'function') {
-            if (this.#usesHooks) {
-              throw new Error(
-                `Component "${getComponentName(this.constructor)}" ` +
-                  'uses hooks but returns a render function - this is ' +
-                  'not allowed'
-              );
-            }
-
-            this.#isFactoryFunction = true;
-            this.#render = result;
-          } else {
-            if (this.#usesExtensions) {
-              throw new Error(
-                `Component "${component}" uses extensions but does not return ` +
-                  'a render function - this is not allowed'
-              );
-            }
-
-            this.#isFactoryFunction = false;
-            content = result ?? null;
+        if (typeof result === 'function') {
+          if (this.#usesHooks) {
+            throw new Error(
+              `Component "${getComponentName(this.constructor)}" ` +
+                'uses hooks but returns a render function - this is ' +
+                'not allowed'
+            );
           }
-        }, getCtrl);
-      }, this.#ctrl.getId());
+
+          this.#isFactoryFunction = true;
+          this.#render = result;
+        } else {
+          if (this.#usesExtensions) {
+            throw new Error(
+              `Component "${component}" uses extensions but does not return ` +
+                'a render function - this is not allowed'
+            );
+          }
+
+          this.#isFactoryFunction = false;
+          content = result ?? null;
+        }
+        // }, this.#ctrl.getId());
+      }, getCtrl);
     }
 
     if (this.#mounted) {
@@ -277,7 +277,7 @@ class BaseComponent<P extends Props> extends PreactComponent<
 
     if (this.#isFactoryFunction) {
       if (!this.#mounted) {
-        return this.#render!();
+        return onRender(() => this.#render!(), this.#ctrl.getId());
       }
 
       let content: any = null;
@@ -300,7 +300,6 @@ class BaseComponent<P extends Props> extends PreactComponent<
 }
 
 function getComponentName(component: Function) {
-  console.log(component);
   return (component as any).displayName || component.name;
 }
 

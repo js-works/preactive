@@ -46,12 +46,29 @@ const store = makeAutoObservable({
 
 setInterval(() => store.increment(), 1000);
 
-let reaction: any = null;
+const reactionsById: Record<string, Reaction> = {};
 
 intercept({
-  onRender(next) {
-    reaction ||= new Reaction('render-reaction', () => console.log('refresh'));
+  onInit(next, getCtrl) {
+    const ctrl = getCtrl(0);
+    const update = ctrl.getUpdater();
+    const id = ctrl.getId();
+
+    let reaction = reactionsById[id];
+
+    if (!reaction) {
+      reaction = new Reaction('reaction', () => {
+        update();
+      });
+
+      reactionsById[id] = reaction;
+    }
+
     reaction.track(next);
+  },
+
+  onRender(next, id) {
+    reactionsById[id].track(next);
   }
 });
 

@@ -93,7 +93,6 @@ function hook<T>(
 ): T {
   const ctrl = getCtrl();
 
-  console.log(111, ctrl);
   const componentId = ctrl.getId();
   let rec = hookData[componentId];
 
