@@ -242,32 +242,32 @@ class BaseComponent<P extends Props> extends PreactComponent<
       };
 
       onInit(() => {
-        //onRender(() => {
-        const result = this.#main(this.#propsObj);
+        onRender(() => {
+          const result = this.#main(this.#propsObj);
 
-        if (typeof result === 'function') {
-          if (this.#usesHooks) {
-            throw new Error(
-              `Component "${getComponentName(this.constructor)}" ` +
-                'uses hooks but returns a render function - this is ' +
-                'not allowed'
-            );
+          if (typeof result === 'function') {
+            if (this.#usesHooks) {
+              throw new Error(
+                `Component "${getComponentName(this.constructor)}" ` +
+                  'uses hooks but returns a render function - this is ' +
+                  'not allowed'
+              );
+            }
+
+            this.#isFactoryFunction = true;
+            this.#render = result;
+          } else {
+            if (this.#usesExtensions) {
+              throw new Error(
+                `Component "${component}" uses extensions but does not return ` +
+                  'a render function - this is not allowed'
+              );
+            }
+
+            this.#isFactoryFunction = false;
+            content = result ?? null;
           }
-
-          this.#isFactoryFunction = true;
-          this.#render = result;
-        } else {
-          if (this.#usesExtensions) {
-            throw new Error(
-              `Component "${component}" uses extensions but does not return ` +
-                'a render function - this is not allowed'
-            );
-          }
-
-          this.#isFactoryFunction = false;
-          content = result ?? null;
-        }
-        // }, this.#ctrl.getId());
+        }, this.#ctrl.getId());
       }, getCtrl);
     }
 

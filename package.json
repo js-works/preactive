@@ -30,6 +30,12 @@
       "require": "./dist/preactive.util.cjs.js",
       "umd": "./dist/preactive.util.umd.js",
       "types": "./dist/types/util.d.ts"
+    },
+    "./mobx-tools": {
+      "import": "./dist/preactive.mobx-tools.esm.js",
+      "require": "./dist/preactive.mobx-tools.cjs.js",
+      "umd": "./dist/preactive.mobx-tools.umd.js",
+      "types": "./dist/types/mobx-tools.d.ts"
     }
   },
   "files": [

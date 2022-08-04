@@ -30,7 +30,8 @@
     "src/main/core.ts",
     "src/main/hooks.ts",
     "src/main/ext.ts",
-    "src/main/util.ts"
+    "src/main/util.ts",
+    "src/main/mobx-tools.ts"
   ],
   "include": ["./src/main/*.ts"],
   "exclude": ["node_modules"]

@@ -1,9 +1,10 @@
 /** @jsx h */
 import { ReactiveControllerHost } from 'lit';
+import { makeAutoObservable } from 'mobx';
+import { makeComponentsMobxAware } from 'preactive/mobx-tools';
 import { h, createContext, createRef, RefObject } from 'preact';
-import { action, autorun, makeAutoObservable, Reaction } from 'mobx';
-import { component, intercept, PropsOf } from '../main/core';
-import { useEffect, useState } from '../main/hooks';
+import { component, PropsOf } from 'preactive';
+import { useEffect, useState } from 'preactive/hooks';
 
 import {
   consume,
@@ -44,33 +45,9 @@ const store = makeAutoObservable({
   }
 });
 
-setInterval(() => store.increment(), 1000);
+setInterval(() => store.increment(), 3000);
 
-const reactionsById: Record<string, Reaction> = {};
-
-intercept({
-  onInit(next, getCtrl) {
-    const ctrl = getCtrl();
-    const update = ctrl.getUpdater();
-    const id = ctrl.getId();
-
-    let reaction = reactionsById[id];
-
-    if (!reaction) {
-      reaction = new Reaction('reaction', () => {
-        update();
-      });
-
-      reactionsById[id] = reaction;
-    }
-
-    reaction.track(next);
-  },
-
-  onRender(next, id) {
-    reactionsById[id].track(next);
-  }
-});
+makeComponentsMobxAware();
 
 // === Simple counter demo ===========================================
 
@@ -121,6 +98,7 @@ const SimpleCounterDemo2 = component('SimpleCounterDemo2')<{
   return (
     <div>
       <h3>Simple counter demo 2:</h3>
+      {store.count}
       <button onClick={onIncrement}>
         {label}: {count}
       </button>
