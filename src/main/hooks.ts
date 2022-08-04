@@ -1,4 +1,5 @@
-import { intercept, Ctrl } from 'preactive';
+import { Component } from 'preact';
+import { intercept, ComponentCtrl } from 'preactive';
 
 // === types =========================================================
 
@@ -6,9 +7,10 @@ type Ref<T> = { current: T };
 
 // === interception logic ============================================
 
-let getCurrCtrl: ((neededForExtensions?: boolean) => Ctrl) | null = null;
+let getCurrCtrl: ((neededForExtensions?: boolean) => ComponentCtrl) | null =
+  null;
 
-function getCtrl() {
+function getCtrl(): ComponentCtrl {
   if (!getCurrCtrl) {
     throw Error('Hook has been called outside of component function');
   }
@@ -39,7 +41,7 @@ type StateSetter<T> = (updater: StateUpdater<T>) => void;
 // === local data ====================================================
 
 const hookData = new WeakMap<
-  Ctrl,
+  ComponentCtrl,
   {
     hookIndex: number;
     values: any[];
@@ -53,7 +55,11 @@ function createRef<T>(value: T) {
 }
 
 function hook<T>(
-  action: (ctrl: Ctrl, prevValue: T | undefined, isInitialized: boolean) => T
+  action: (
+    ctrl: ComponentCtrl,
+    prevValue: T | undefined,
+    isInitialized: boolean
+  ) => T
 ): T {
   const ctrl = getCtrl();
   let rec = hookData.get(ctrl);

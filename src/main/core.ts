@@ -12,7 +12,7 @@ import type { Context, VNode } from 'preact';
 // === exports =======================================================
 
 export { component, h, intercept, render };
-export type { Ctrl, Props, PropsOf };
+export type { ComponentCtrl, Props, PropsOf };
 
 // === global types ==================================================
 
@@ -31,7 +31,7 @@ interface ComponentFunc<P extends Props> {
   (p: P): VNode | (() => VNode);
 }
 
-interface Ctrl {
+interface ComponentCtrl {
   afterMount(task: () => void): void;
   beforeUpdate(task: () => void): void;
   afterUpdate(task: () => void): void;
@@ -72,14 +72,14 @@ let onCreateElement:
 
 let onMain: (
   next: () => void,
-  getCtrl: (neededForExtensions?: boolean) => Ctrl
+  getCtrl: (neededForExtensions?: boolean) => ComponentCtrl
 ) => void = (next) => next();
 
 let onRender: (next: () => void) => void = (next) => next();
 
 // === local classes and functions ===================================
 
-class Controller implements Ctrl {
+class Controller implements ComponentCtrl {
   #component: BaseComponent<any>;
 
   #lifecycle: Record<LifecycleEvent, Task[]> = {
@@ -90,6 +90,12 @@ class Controller implements Ctrl {
   };
 
   #update: (force?: boolean) => void;
+
+  #preventRefresh = false;
+
+  #refresh = () => {
+    !this.#preventRefresh && this.#update();
+  };
 
   constructor(
     component: BaseComponent<Props & unknown>,
@@ -146,7 +152,7 @@ class BaseComponent<P extends Props> extends PreactComponent<
   P,
   { dummy: number }
 > {
-  #ctrl!: Ctrl;
+  #ctrl!: ComponentCtrl;
   #emit: null | ((event: LifecycleEvent) => void) = null;
   #mounted = false;
   #main: any;
@@ -312,7 +318,7 @@ function intercept(params: {
 
   onMain?(
     next: () => void,
-    getCtrl: (neededForExtensions?: boolean) => Ctrl
+    getCtrl: (neededForExtensions?: boolean) => ComponentCtrl
   ): void;
 
   onRender?(next: () => void): void;

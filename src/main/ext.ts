@@ -1,6 +1,6 @@
 import type { ReactiveControllerHost, ReactiveController } from 'lit';
 import { Context, Ref, RefObject } from 'preact';
-import { intercept, Ctrl, Props } from 'preactive';
+import { intercept, ComponentCtrl, Props } from 'preactive';
 
 // === types =========================================================
 
@@ -46,7 +46,8 @@ type StateObjSetter<T extends Record<string, any>> = {
 
 // === interception logic ============================================
 
-let getCurrCtrl: ((neededForExtensions?: boolean) => Ctrl) | null = null;
+let getCurrCtrl: ((neededForExtensions?: boolean) => ComponentCtrl) | null =
+  null;
 
 function getCtrl() {
   if (!getCurrCtrl) {
@@ -594,7 +595,7 @@ class Host implements ReactiveControllerHost {
   #update: () => void;
   #controllers = new Set<ReactiveController>();
 
-  constructor(ctrl: Ctrl) {
+  constructor(ctrl: ComponentCtrl) {
     this.#update = ctrl.getUpdater();
 
     ctrl.afterMount(() => {
