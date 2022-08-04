@@ -1,7 +1,8 @@
 /** @jsx h */
 import { ReactiveControllerHost } from 'lit';
 import { h, createContext, createRef, RefObject } from 'preact';
-import { component, PropsOf } from '../main/core';
+import { action, autorun, makeAutoObservable, Reaction } from 'mobx';
+import { component, intercept, PropsOf } from '../main/core';
 import { useEffect, useState } from '../main/hooks';
 
 import {
@@ -33,6 +34,27 @@ export const contextDemo = () => <ContextDemo />;
 export const mousePositionDemo = () => <MousePositionDemo />;
 export const promiseDemo = () => <PromiseDemo />;
 
+// === Mobx observable ===============================================
+
+const store = makeAutoObservable({
+  count: 0,
+
+  increment() {
+    this.count++;
+  }
+});
+
+setInterval(() => store.increment(), 1000);
+
+let reaction: any = null;
+
+intercept({
+  onRender(next) {
+    reaction ||= new Reaction('render-reaction', () => console.log('refresh'));
+    reaction.track(next);
+  }
+});
+
 // === Simple counter demo ===========================================
 
 const SimpleCounterDemo = component('SimpleCounterDemo')<{
@@ -58,6 +80,7 @@ const SimpleCounterDemo = component('SimpleCounterDemo')<{
   return () => (
     <div>
       <h3>Simple counter demo:</h3>
+      {store.count}
       <label>{props.label}: </label>
       <input type="number" value={getCount()} onInput={onInput} />
       <button onClick={onIncrement}>{getCount()}</button>

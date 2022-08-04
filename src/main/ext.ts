@@ -46,19 +46,18 @@ type StateObjSetter<T extends Record<string, any>> = {
 
 // === interception logic ============================================
 
-let getCurrCtrl: ((neededForExtensions?: boolean) => ComponentCtrl) | null =
-  null;
+let getCurrCtrl: ((kind: 0 | 1 | 2) => ComponentCtrl) | null = null;
 
 function getCtrl() {
   if (!getCurrCtrl) {
     throw Error('Extension has been called outside of component function');
   }
 
-  return getCurrCtrl(true);
+  return getCurrCtrl(2);
 }
 
 intercept({
-  onMain(next, getCtrl) {
+  onInit(next, getCtrl) {
     try {
       getCurrCtrl = getCtrl;
       next();

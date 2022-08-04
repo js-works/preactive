@@ -61,6 +61,7 @@
   },
   "homepage": "https://github.com/js-works/preactive#readme",
   "dependencies": {
+    "mobx": "^6.6.1",
     "preact": "^10.10.0"
   },
   "devDependencies": {

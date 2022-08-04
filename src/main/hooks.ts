@@ -1,4 +1,3 @@
-import { Component } from 'preact';
 import { intercept, ComponentCtrl } from 'preactive';
 
 // === types =========================================================
@@ -7,24 +6,53 @@ type Ref<T> = { current: T };
 
 // === interception logic ============================================
 
-let getCurrCtrl: ((neededForExtensions?: boolean) => ComponentCtrl) | null =
-  null;
+let getCurrCtrl: ((kind: 0 | 1 | 2) => ComponentCtrl) | null = null;
+let currComponentId = '';
 
 function getCtrl(): ComponentCtrl {
+  if (currComponentId) {
+    const ctrl = ctrlById[currComponentId];
+
+    if (ctrl) {
+      return ctrl;
+    }
+  }
+
   if (!getCurrCtrl) {
     throw Error('Hook has been called outside of component function');
   }
 
-  return getCurrCtrl();
+  const ctrl = getCurrCtrl(1);
+  const id = ctrl.getId();
+
+  if (!ctrlById[id]) {
+    ctrlById[id] = ctrl;
+
+    ctrl.beforeUnmount(() => {
+      delete ctrlById[id];
+      delete hookData[id];
+    });
+  }
+
+  return ctrl;
 }
 
 intercept({
-  onMain(next, getCtrl) {
+  onInit(next, getCtrl) {
     try {
       getCurrCtrl = getCtrl;
       next();
     } finally {
       getCurrCtrl = null;
+    }
+  },
+
+  onRender(next, componentId) {
+    try {
+      currComponentId = componentId;
+      next();
+    } finally {
+      currComponentId = '';
     }
   }
 });
@@ -40,13 +68,15 @@ type StateSetter<T> = (updater: StateUpdater<T>) => void;
 
 // === local data ====================================================
 
-const hookData = new WeakMap<
-  ComponentCtrl,
+const ctrlById: Record<string, ComponentCtrl> = {};
+
+const hookData: Record<
+  string,
   {
     hookIndex: number;
     values: any[];
   }
->();
+> = {};
 
 // === local functions ===============================================
 
@@ -62,11 +92,14 @@ function hook<T>(
   ) => T
 ): T {
   const ctrl = getCtrl();
-  let rec = hookData.get(ctrl);
+
+  console.log(111, ctrl);
+  const componentId = ctrl.getId();
+  let rec = hookData[componentId];
 
   if (!rec) {
     rec = { hookIndex: -1, values: [] };
-    hookData.set(ctrl, rec);
+    hookData[componentId] = rec;
 
     const resetHookIndex = () => void (rec!.hookIndex = -1);
 

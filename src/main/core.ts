@@ -32,6 +32,7 @@ interface ComponentFunc<P extends Props> {
 }
 
 interface ComponentCtrl {
+  getId(): string;
   afterMount(task: () => void): void;
   beforeUpdate(task: () => void): void;
   afterUpdate(task: () => void): void;
@@ -70,16 +71,21 @@ let onCreateElement:
   | ((next: () => void, type: string | Function, props: Props) => void)
   | null = null;
 
-let onMain: (
+let onInit: (
   next: () => void,
-  getCtrl: (neededForExtensions?: boolean) => ComponentCtrl
+  getCtrl: (kind: 0 | 1 | 2) => ComponentCtrl
 ) => void = (next) => next();
 
-let onRender: (next: () => void) => void = (next) => next();
+let onRender: (next: () => void, componentId: string) => void = (next) =>
+  next();
 
 // === local classes and functions ===================================
 
 class Controller implements ComponentCtrl {
+  static #nextId = 0;
+
+  #id: string;
+
   #component: BaseComponent<any>;
 
   #lifecycle: Record<LifecycleEvent, Task[]> = {
@@ -91,23 +97,23 @@ class Controller implements ComponentCtrl {
 
   #update: (force?: boolean) => void;
 
-  #preventRefresh = false;
-
-  #refresh = () => {
-    !this.#preventRefresh && this.#update();
-  };
-
   constructor(
     component: BaseComponent<Props & unknown>,
     update: (force?: boolean) => void,
     setLifecycleEventHandler: (handler: LifecycleEventHandler) => void
   ) {
+    Controller.#nextId = (Controller.#nextId + 1) % 2000000000;
+    this.#id = Date.now() + '-' + Controller.#nextId;
     this.#component = component;
     this.#update = update;
 
     setLifecycleEventHandler((eventName) => {
       this.#lifecycle[eventName].forEach((it) => it());
     });
+  }
+
+  getId() {
+    return this.#id;
   }
 
   afterMount(task: Task) {
@@ -152,7 +158,7 @@ class BaseComponent<P extends Props> extends PreactComponent<
   P,
   { dummy: number }
 > {
-  #ctrl!: ComponentCtrl;
+  #ctrl: ComponentCtrl;
   #emit: null | ((event: LifecycleEvent) => void) = null;
   #mounted = false;
   #main: any;
@@ -179,6 +185,18 @@ class BaseComponent<P extends Props> extends PreactComponent<
     };
 
     this.#propsObj = Object.assign(new propsObjClass(), props);
+
+    this.#ctrl = new Controller(this, this.#update, (handler: any) => {
+      this.#emit = handler;
+    });
+
+    this.#ctrl.beforeUpdate(() => {
+      for (const key in this.#propsObj) {
+        delete this.#propsObj[key];
+      }
+
+      Object.assign(this.#propsObj, this.props);
+    });
   }
 
   componentDidMount() {
@@ -208,9 +226,9 @@ class BaseComponent<P extends Props> extends PreactComponent<
     let content: any;
 
     if (this.#isFactoryFunction === undefined) {
-      const getCtrl = (neededForExtensions = false) => {
-        this.#usesExtensions ||= neededForExtensions;
-        this.#usesHooks ||= !neededForExtensions;
+      const getCtrl = (kind: 0 | 1 | 2) => {
+        this.#usesExtensions ||= kind === 2;
+        this.#usesHooks ||= kind === 1;
 
         if (this.#usesHooks && this.#usesExtensions) {
           throw (
@@ -220,27 +238,11 @@ class BaseComponent<P extends Props> extends PreactComponent<
           );
         }
 
-        if (this.#ctrl) {
-          return this.#ctrl;
-        }
-
-        this.#ctrl = new Controller(this, this.#update, (handler: any) => {
-          this.#emit = handler;
-        });
-
-        this.#ctrl.beforeUpdate(() => {
-          for (const key in this.#propsObj) {
-            delete this.#propsObj[key];
-          }
-
-          Object.assign(this.#propsObj, this.props);
-        });
-
         return this.#ctrl;
       };
 
       onRender(() => {
-        onMain(() => {
+        onInit(() => {
           const result = this.#main(this.#propsObj);
 
           if (typeof result === 'function') {
@@ -266,7 +268,7 @@ class BaseComponent<P extends Props> extends PreactComponent<
             content = result ?? null;
           }
         }, getCtrl);
-      });
+      }, this.#ctrl.getId());
     }
 
     if (this.#mounted) {
@@ -282,19 +284,14 @@ class BaseComponent<P extends Props> extends PreactComponent<
 
       onRender(() => {
         content = this.#render!();
-      });
+      }, this.#ctrl.getId());
 
       return content;
     } else {
       if (content === undefined) {
-        onMain(
-          () => {
-            onRender(() => {
-              content = this.#main(this.#propsObj);
-            });
-          },
-          () => this.#ctrl
-        );
+        onRender(() => {
+          content = this.#main(this.#propsObj);
+        }, this.#ctrl.getId());
       }
 
       return content;
@@ -316,12 +313,8 @@ function intercept(params: {
     props: Props
   ): void;
 
-  onMain?(
-    next: () => void,
-    getCtrl: (neededForExtensions?: boolean) => ComponentCtrl
-  ): void;
-
-  onRender?(next: () => void): void;
+  onInit?(next: () => void, getCtrl: (kind: 0 | 1 | 2) => ComponentCtrl): void;
+  onRender?(next: () => void, componentId: string): void;
 }) {
   if (params.onCreateElement) {
     if (!onCreateElement) {
@@ -354,19 +347,20 @@ function intercept(params: {
       );
   }
 
-  if (params.onMain) {
-    const oldOnMain = onMain;
-    const newOnMain = params.onMain;
+  if (params.onInit) {
+    const oldOnInit = onInit;
+    const newOnInit = params.onInit;
 
-    onMain = (next, getCtrl) =>
-      void newOnMain(() => oldOnMain(next, getCtrl), getCtrl);
+    onInit = (next, getCtrl) =>
+      void newOnInit(() => oldOnInit(next, getCtrl), getCtrl);
   }
 
   if (params.onRender) {
     const oldOnRender = onRender;
     const newOnRender = params.onRender;
 
-    onRender = (next) => void newOnRender(() => oldOnRender(next));
+    onRender = (next, componentId) =>
+      void newOnRender(() => oldOnRender(next, componentId), componentId);
   }
 }
 
