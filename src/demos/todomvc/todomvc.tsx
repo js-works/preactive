@@ -13,49 +13,49 @@ type Todo = {
   completed: boolean;
 };
 
-type TodoFilter = (todo: Todo) => boolean;
-
 // === constants =====================================================
 
 const ENTER_KEY = 13;
 const ESC_KEY = 27;
 const STORAGE_KEY = 'todomvc::data';
 
-// === todo filters ==================================================
+// === Filter ========================================================
 
-const filters = {
-  none: (todo: Todo) => true,
-  active: (todo: Todo) => !todo.completed,
-  completed: (todo: Todo) => todo.completed
-};
+class Filter {
+  static none = new Filter(() => true);
+  static active = new Filter((todo) => !todo.completed);
+  static completed = new Filter((todo) => todo.completed);
+
+  private constructor(public apply: (todo: Todo) => boolean) {}
+}
 
 // === mobx store ====================================================
 
 const store = makeAutoObservable({
-  filter: filters.none,
+  filter: Filter.none,
   todos: [] as Todo[],
 
-  init(todos: Todo[] = [], filter = filters.none) {
+  init(todos: Todo[] = [], filter = Filter.none) {
     this.todos = todos;
     this.filter = filter;
   },
 
-  setFilter(filter: TodoFilter) {
+  setFilter(filter: Filter) {
     this.filter = filter;
   },
 
-  setTitle(id: number, title: string) {
-    const idx = store.todos.findIndex((it) => (it.id = id));
+  setTodoTitle(id: number, title: string) {
+    const idx = this.todos.findIndex((todo) => (todo.id = id));
 
     if (idx >= 0) {
-      store.todos[idx].title = title;
+      this.todos[idx].title = title;
     }
   },
 
   addTodo(title: string) {
-    const id = store.todos.reduce((max, it) => Math.max(max, it.id + 1), 0);
+    const id = store.todos.reduce((max, todo) => Math.max(max, todo.id + 1), 0);
 
-    store.todos.push({
+    this.todos.push({
       id,
       title,
       completed: false
@@ -63,29 +63,23 @@ const store = makeAutoObservable({
   },
 
   deleteTodo(id: number) {
-    const idx = store.todos.findIndex((it) => (it.id = id));
-
-    if (idx >= 0) {
-      store.todos.splice(idx, 1);
-    }
+    this.todos = this.todos.filter((todo) => todo.id !== id);
   },
 
   deleteCompleted() {
-    store.todos = store.todos.filter((todo) => !todo.completed);
+    this.todos = this.todos.filter((todo) => !todo.completed);
   },
 
   setCompleted(id: number, completed = true) {
-    const idx = store.todos.findIndex((it) => (it.id = id));
+    const idx = this.todos.findIndex((todo) => todo.id === id);
 
     if (idx >= 0) {
-      store.todos[idx].completed = completed;
+      this.todos[idx].completed = completed;
     }
   },
 
   setAllCompleted(completed = true) {
-    store.todos.forEach((todo) => {
-      todo.completed = completed;
-    });
+    this.todos.forEach((todo) => (todo.completed = completed));
   }
 });
 
@@ -146,7 +140,9 @@ function Header() {
   );
 }
 
-function TodoItem(p: { todo: Todo }) {
+function TodoItem(p: {
+  todo: Todo; //
+}) {
   const inputFieldRef = createRef<HTMLInputElement>();
 
   const [state, set] = stateObj({
@@ -154,7 +150,7 @@ function TodoItem(p: { todo: Todo }) {
     title: p.todo.title
   });
 
-  const onDestroyClick = () => store.deleteTodo(p.todo.id);
+  const onDeleteClick = () => store.deleteTodo(p.todo.id);
 
   const onToggleClick = (ev: any) =>
     store.setCompleted(p.todo.id, ev.target.checked);
@@ -167,7 +163,7 @@ function TodoItem(p: { todo: Todo }) {
     set({ active: false, title });
 
     if (title) {
-      store.setTitle(p.todo.id, title);
+      store.setTodoTitle(p.todo.id, title);
     } else {
       store.deleteTodo(p.todo.id);
     }
@@ -201,7 +197,7 @@ function TodoItem(p: { todo: Todo }) {
             onChange={onToggleClick}
           />
           <label onDblClick={onDoubleClick}>{state.title}</label>
-          <button className="destroy" onClick={onDestroyClick} />
+          <button className="destroy" onClick={onDeleteClick} />
         </div>
         <input
           ref={inputFieldRef}
@@ -216,13 +212,13 @@ function TodoItem(p: { todo: Todo }) {
   };
 }
 
-function Main(p: { todos: Todo[]; filter: TodoFilter }) {
+function Main() {
   const onChange = () =>
-    store.setAllCompleted(!p.todos.every((todo) => todo.completed));
+    store.setAllCompleted(!store.todos.every((todo) => todo.completed));
 
   return () => {
-    const completed = !p.todos.every((todo) => todo.completed);
-    const filteredTodos = p.todos.filter(store.filter);
+    const completed = !store.todos.every((todo) => todo.completed);
+    const filteredTodos = store.todos.filter(store.filter.apply);
 
     return (
       <section className="main">
@@ -244,60 +240,62 @@ function Main(p: { todos: Todo[]; filter: TodoFilter }) {
   };
 }
 
-function Filters(p: {
-  filter: TodoFilter; //
-}) {
-  const createListener = (filter: TodoFilter) => {
-    return () => store.setFilter(filter);
+function Filters() {
+  const createListener = (filter: Filter) => {
+    return (ev: Event) => {
+      ev.preventDefault();
+      store.setFilter(filter);
+    };
   };
 
   return (
     <ul className="filters">
       <li>
-        <button
-          onClick={createListener(filters.none)}
-          className={p.filter === filters.none ? 'selected' : ''}
+        <a
+          href="#/"
+          onClick={createListener(Filter.none)}
+          className={store.filter === Filter.none ? 'selected' : ''}
         >
           All
-        </button>
+        </a>
       </li>
       <li>
-        <button
-          onClick={createListener(filters.active)}
-          className={p.filter === filters.active ? 'selected' : ''}
+        <a
+          href="#/active"
+          onClick={createListener(Filter.active)}
+          className={store.filter === Filter.active ? 'selected' : ''}
         >
           Active
-        </button>
+        </a>
       </li>
       <li>
-        <button
-          onClick={createListener(filters.completed)}
-          className={p.filter === filters.completed ? 'selected' : ''}
+        <a
+          href="#/completed"
+          onClick={createListener(Filter.completed)}
+          className={store.filter === Filter.completed ? 'selected' : ''}
         >
           Completed
-        </button>
+        </a>
       </li>
     </ul>
   );
 }
 
-function Footer(p: {
-  todos: Todo[]; //
-  filter: TodoFilter;
-}) {
+function Footer() {
   const onClearCompletedClick = () => store.deleteCompleted();
 
   return () => {
-    const completed = p.todos.filter((todo) => todo.completed).length;
-    const remaining = p.todos.length - completed;
+    const numCompleted = store.todos.filter((todo) => todo.completed).length;
+    const numRemaining = store.todos.length - numCompleted;
 
     return (
       <footer className="footer">
         <span className="todo-count">
-          <strong>{remaining}</strong> {remaining === 1 ? 'item' : 'items'} left
+          <strong>{numRemaining}</strong>{' '}
+          {numRemaining === 1 ? 'item' : 'items'} left
         </span>
-        <Filters filter={p.filter} />
-        {!!completed && (
+        <Filters />
+        {!!numCompleted && (
           <button className="clear-completed" onClick={onClearCompletedClick}>
             Clear completed
           </button>
@@ -308,24 +306,23 @@ function Footer(p: {
 }
 
 function App() {
-  const getContent = (filter: TodoFilter) => {
-    const todos = store.todos.filter(store.filter);
-    console.log(store.filter);
+  const getContent = (filter: Filter) => {
+    const todos = store.todos.filter(store.filter.apply);
+
     return (
       <div>
-        yyyy
         <Header />
-        {!!todos.length && <Main todos={todos} filter={filter} />}
-        {!!todos.length && <Footer todos={todos} filter={filter} />}
+        {!!store.todos.length && <Main />}
+        {!!store.todos.length && <Footer />}
       </div>
     );
   };
 
   return () => (
     <div>
-      {store.filter === filters.active && getContent(filters.active)}
-      {store.filter === filters.completed && getContent(filters.completed)}
-      {store.filter === filters.none && getContent(filters.none)}
+      {store.filter === Filter.active && getContent(Filter.active)}
+      {store.filter === Filter.completed && getContent(Filter.completed)}
+      {store.filter === Filter.none && getContent(Filter.none)}
     </div>
   );
 }
