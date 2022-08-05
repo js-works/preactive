@@ -1,6 +1,6 @@
 {
   "name": "preactive",
-  "version": "0.0.65",
+  "version": "0.0.66",
   "description": "",
   "main": "dist/preactive.core.cjs.js",
   "module": "dist/preactive.core.esm.js",

@@ -1,8 +1,24 @@
 import { intercept, ComponentCtrl, ComponentCtrlGetter } from 'preactive';
 
+// === exports =======================================================
+
+export { useEffect, useRef, useState };
+
 // === types =========================================================
 
 type Ref<T> = { current: T };
+
+// === local data ====================================================
+
+const ctrlById: Record<string, ComponentCtrl> = {};
+
+const hookData: Record<
+  string,
+  {
+    hookIndex: number;
+    values: any[];
+  }
+> = {};
 
 // === interception logic ============================================
 
@@ -57,26 +73,10 @@ intercept({
   }
 });
 
-// === exports =======================================================
-
-export { useEffect, useRef, useState };
-
 // === types =========================================================
 
 type StateUpdater<T> = (value: T) => T;
 type StateSetter<T> = (updater: StateUpdater<T>) => void;
-
-// === local data ====================================================
-
-const ctrlById: Record<string, ComponentCtrl> = {};
-
-const hookData: Record<
-  string,
-  {
-    hookIndex: number;
-    values: any[];
-  }
-> = {};
 
 // === local functions ===============================================
 

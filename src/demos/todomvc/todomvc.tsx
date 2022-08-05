@@ -1,7 +1,7 @@
 /** @jsx h */
-import { createRef } from 'preact';
 import { h, render } from 'preactive';
-import { effect, stateObj } from 'preactive/ext';
+import { effect, mutable } from 'preactive/ext';
+import { createRef } from 'preactive/util';
 import { makeComponentsMobxAware } from 'preactive/mobx-tools';
 import { autorun, makeAutoObservable } from 'mobx';
 
@@ -45,7 +45,7 @@ const store = makeAutoObservable({
   },
 
   setTodoTitle(id: number, title: string) {
-    const idx = this.todos.findIndex((todo) => (todo.id = id));
+    const idx = this.todos.findIndex((todo) => todo.id === id);
 
     if (idx >= 0) {
       this.todos[idx].title = title;
@@ -83,6 +83,34 @@ const store = makeAutoObservable({
   }
 });
 
+// === routing =======================================================
+
+function establishRouting(): void {
+  const route = () => {
+    switch (window.location.hash) {
+      case '#/active': {
+        store.setFilter(Filter.active);
+        break;
+      }
+      case '#/completed': {
+        store.setFilter(Filter.completed);
+        break;
+      }
+      case '#/': {
+        store.setFilter(Filter.none);
+        break;
+      }
+      default: {
+        store.setFilter(Filter.none);
+        window.location.hash = '#/';
+      }
+    }
+  };
+
+  route();
+  window.addEventListener('hashchange', route);
+}
+
 // === storage functions =============================================
 
 function loadTodos(): Todo[] {
@@ -110,13 +138,13 @@ function saveTodos(todos: Todo[]) {
 // === components ====================================================
 
 function Header() {
-  const [s, set] = stateObj({ title: '' });
-  const onInput = (ev: any) => set.title(ev.target.value);
+  const s = mutable({ title: '' });
+  const onInput = (ev: any) => (s.title = ev.target.value);
 
   const onKeyDown = (ev: any) => {
     if (ev.keyCode === ENTER_KEY) {
       const newTitle = ev.target.value.trim();
-      set.title('');
+      s.title = '';
 
       if (newTitle) {
         ev.preventDefault();
@@ -145,7 +173,7 @@ function TodoItem(p: {
 }) {
   const inputFieldRef = createRef<HTMLInputElement>();
 
-  const [state, set] = stateObj({
+  const s = mutable({
     active: false,
     title: p.todo.title
   });
@@ -155,12 +183,13 @@ function TodoItem(p: {
   const onToggleClick = (ev: any) =>
     store.setCompleted(p.todo.id, ev.target.checked);
 
-  const onDoubleClick = () => set.active(true);
-  const onInput = (ev: any) => set.title(ev.target.value);
+  const onDoubleClick = () => (s.active = true);
+  const onInput = (ev: any) => (s.title = ev.target.value);
 
   const onBlur = (ev: any) => {
     const title = ev.target.value.trim();
-    set({ active: false, title });
+    s.active = false;
+    s.title = title;
 
     if (title) {
       store.setTodoTitle(p.todo.id, title);
@@ -173,7 +202,7 @@ function TodoItem(p: {
     if (ev.keyCode === ENTER_KEY) {
       ev.target.blur();
     } else if (ev.keyCode === ESC_KEY) {
-      set.active(false);
+      s.active = false;
     }
   };
 
@@ -185,7 +214,7 @@ function TodoItem(p: {
 
   return () => {
     const classes =
-      (state.active ? 'editing ' : '') + (p.todo.completed ? 'completed' : '');
+      (s.active ? 'editing ' : '') + (p.todo.completed ? 'completed' : '');
 
     return (
       <li className={classes}>
@@ -196,13 +225,13 @@ function TodoItem(p: {
             checked={p.todo.completed}
             onChange={onToggleClick}
           />
-          <label onDblClick={onDoubleClick}>{state.title}</label>
+          <label onDblClick={onDoubleClick}>{s.title}</label>
           <button className="destroy" onClick={onDeleteClick} />
         </div>
         <input
           ref={inputFieldRef}
           className="edit"
-          value={state.title}
+          value={s.title}
           onChange={onInput}
           onBlur={onBlur}
           onKeyDown={onKeyDown}
@@ -241,28 +270,16 @@ function Main() {
 }
 
 function Filters() {
-  const createListener = (filter: Filter) => {
-    return (ev: Event) => {
-      ev.preventDefault();
-      store.setFilter(filter);
-    };
-  };
-
   return (
     <ul className="filters">
       <li>
-        <a
-          href="#/"
-          onClick={createListener(Filter.none)}
-          className={store.filter === Filter.none ? 'selected' : ''}
-        >
+        <a href="#/" className={store.filter === Filter.none ? 'selected' : ''}>
           All
         </a>
       </li>
       <li>
         <a
           href="#/active"
-          onClick={createListener(Filter.active)}
           className={store.filter === Filter.active ? 'selected' : ''}
         >
           Active
@@ -271,7 +288,6 @@ function Filters() {
       <li>
         <a
           href="#/completed"
-          onClick={createListener(Filter.completed)}
           className={store.filter === Filter.completed ? 'selected' : ''}
         >
           Completed
@@ -306,23 +322,13 @@ function Footer() {
 }
 
 function App() {
-  const getContent = (filter: Filter) => {
-    const todos = store.todos.filter(store.filter.apply);
-
-    return (
+  return (
+    <div>
       <div>
         <Header />
         {!!store.todos.length && <Main />}
         {!!store.todos.length && <Footer />}
       </div>
-    );
-  };
-
-  return () => (
-    <div>
-      {store.filter === Filter.active && getContent(Filter.active)}
-      {store.filter === Filter.completed && getContent(Filter.completed)}
-      {store.filter === Filter.none && getContent(Filter.none)}
     </div>
   );
 }
@@ -332,4 +338,5 @@ function App() {
 makeComponentsMobxAware();
 store.init(loadTodos());
 autorun(() => saveTodos(store.todos));
+establishRouting();
 render(<App />, '.todoapp');
