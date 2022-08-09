@@ -26,6 +26,11 @@ npm run storybook
 
 ## Examples
 
+Remark: We are using the following naming convention to reduce the amount of noise in the source code (for non-trivial components, where you access the props and the state object very often, that makes quite a difference):
+
+- `p` is the variable for the props object
+- `s` is the variable for a state object
+
 ### Simple counter
 
 ```tsx
