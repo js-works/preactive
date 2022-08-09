@@ -1,5 +1,6 @@
 import type { ReactiveControllerHost, ReactiveController } from 'lit';
-import { Context, Ref, RefObject } from 'preact';
+import type { Context, Ref, RefObject } from 'preact';
+
 import {
   intercept,
   ComponentCtrl,
@@ -25,13 +26,14 @@ export {
   effect,
   getRefresher,
   mutable,
-  preset,
   optimizeUpdates,
-  setDefaults,
+  preset,
   stateFn,
   stateObj,
+  stateObj as state, // do not know the final name yet
   stateRef,
   stateVal,
+  stateVal as atom, // do not know the final name yet
   interval,
   handleMethods,
   handlePromise
@@ -79,52 +81,13 @@ intercept({
 function preset<P extends Props, D extends Partial<P>>(
   props: P,
   defaults: D | (() => D)
-): P & D {
-  const ret: any = {};
-  const preactClass = (props as any)?.constructor?.__preactClass;
-
-  if (typeof preactClass !== 'function') {
-    throw new TypeError('Illegal first argument for function `preset`');
-  }
-
-  let defaultValues: D | null = null;
-  const ctrl = getCtrl();
-
-  if (typeof defaults !== 'function') {
-    defaultValues = defaults;
-  } else {
-    defaultValues = preactClass.__defaults;
-
-    if (!defaultValues) {
-      defaultValues = defaults();
-      preactClass.__defaults = defaultValues;
-    }
-  }
-
-  const reassign = () => {
-    for (const key in ret) {
-      delete ret[key];
-    }
-
-    Object.assign(ret, defaultValues, props);
-  };
-
-  ctrl.beforeUpdate(reassign);
-  reassign();
-
-  return ret;
-}
-
-// --- setDefaults ---------------------------------------------------
-
-function setDefaults<P extends Props, D extends Partial<P>>(
-  props: P,
-  defaults: D | (() => D)
 ): asserts props is P & D {
   const preactClass = (props as any)?.constructor?.__preactClass;
 
   if (typeof preactClass !== 'function') {
-    throw new TypeError('Illegal first argument for function `setDefaults`');
+    throw new TypeError(
+      'Illegal first argument for extension function `preset`'
+    );
   }
 
   let defaultValues: D | null = null;

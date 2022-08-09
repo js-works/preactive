@@ -7,7 +7,7 @@ import gzip from 'rollup-plugin-gzip';
 
 const configs = [];
 
-for (const pkg of ['core', 'ext', 'hooks', 'util', 'mobx-tools']) {
+for (const pkg of ['core', 'ext', 'util']) {
   for (const format of ['cjs', 'esm', 'umd' /*, 'amd' */]) {
     for (const productive of [/*false, */ true]) {
       configs.push(createConfig(pkg, format, productive));
@@ -39,13 +39,7 @@ function createConfig(pkg, moduleFormat, productive) {
       }
     },
 
-    external: [
-      'preact',
-      'preactive',
-      'preactive/ext',
-      'preactive/hooks',
-      'preactive/util'
-    ],
+    external: ['preact', 'preactive', 'preactive/ext', 'preactive/util'],
 
     plugins: [
       resolve(),

@@ -13,12 +13,6 @@
       "umd": "./dist/preactive.core.umd.js",
       "types": "./dist/types/core.d.ts"
     },
-    "./hooks": {
-      "import": "./dist/preactive.hooks.esm.js",
-      "require": "./dist/preactive.hooks.cjs.js",
-      "umd": "./dist/preactive.hooks.umd.js",
-      "types": "./dist/types/hooks.d.ts"
-    },
     "./ext": {
       "import": "./dist/preactive.ext.esm.js",
       "require": "./dist/preactive.ext.cjs.js",
@@ -30,21 +24,13 @@
       "require": "./dist/preactive.util.cjs.js",
       "umd": "./dist/preactive.util.umd.js",
       "types": "./dist/types/util.d.ts"
-    },
-    "./mobx-tools": {
-      "import": "./dist/preactive.mobx-tools.esm.js",
-      "require": "./dist/preactive.mobx-tools.cjs.js",
-      "umd": "./dist/preactive.mobx-tools.umd.js",
-      "types": "./dist/types/mobx-tools.d.ts"
     }
   },
   "files": [
     "src",
     "dist",
-    "hooks",
     "ext",
-    "util",
-    "mobx-tools"
+    "util"
   ],
   "scripts": {
     "clean": "shx rm -rf dist build",
@@ -68,7 +54,6 @@
   },
   "homepage": "https://github.com/js-works/preactive#readme",
   "dependencies": {
-    "mobx": "^6.6.1",
     "preact": "^10.10.0"
   },
   "devDependencies": {

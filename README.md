@@ -1,7 +1,6 @@
 # preactive
 
-A R&D project to evaluate an alternative API for developing components
-with Preact using an alternative to hook functions (called "extensions").<br>
+A R&D project to evaluate an alternative API for developing components with Preact using an alternative to hook functions (called "extensions").<br>
 The main advantages of the new API are:
 
 - No rules of hooks
@@ -30,69 +29,68 @@ npm run storybook
 ### Simple counter
 
 ```tsx
-import { h, render } from 'preact';
-import { component, preset } from 'preactive';
-import { stateVal } from 'preactive/ext';
+import { render } from 'preact';
+import { component } from 'preactive';
+import { preset, state } from 'preactive/ext';
 
 const Counter = component('Counter')<{
   initialCount?: number;
   label?: string;
-}>((props) => {
-  preset(props, () => ({
+}>((p) => {
+  preset(p, () => ({
     initialCount: 0,
     label: 'Counter'
   }));
 
-  const [getCount, setCount] = stateVal(props.initialCount);
-  const onIncrement = () => setCount((it) => it + 1);
+  const [s, set] = state({ count: p.initialCount });
+  const increment = () => set.count((it) => it + 1);
 
   return () => (
     <div>
-      <label>{props.label}: </label>
-      <button onClick={onIncrement}>{getCount()}</button>
+      <button onClick={increment}>
+        {p.label}: {s.count}
+      </button>
     </div>
   );
 });
 
-render(<Counter />, document.getElementById('app'));
+render(<Counter />, document.querySelector('#app')!);
 ```
 
-### Additional example - showing some more features
+### Additional example - showing more features
 
 ```tsx
 import { h, render } from 'preact';
-import { component, preset } from 'preactive';
-import { effect, stateObj } from 'preactive/ext';
+import { component } from 'preactive';
+import { effect, preset, state } from 'preactive/ext';
 
 const Counter = component('Counter')<{
   initialCount?: number;
   label?: string;
-}>((props) => {
-  preset(props, () => ({
+}>((p) => {
+  preset(p, () => ({
     initialCount: 0,
     label: 'Counter'
   }));
 
-  const [state, set] = stateObj({
-    count: props.initialCount
-  });
-
-  const onIncrement = () => set.count((it) => it + 1);
+  const [s, set] = state({ count: p.initialCount });
+  const increment = () => s.count((it) => it + 1);
 
   effect(
-    () => console.log(`Value of "${props.label}": ${state.count}`),
-    () => [state.count]
+    () => console.log(`Value of "${p.label}": ${s.count}`),
+    () => [s.count]
   );
 
   return () => (
     <div>
-      <label>{props.label}: </label>
-      <button onClick={onIncrement}>{state.count}</button>
+      <button onClick={increment}>
+        {p.label}: {s.count}
+      </button>
     </div>
   );
 });
 
-render(<Counter />, document.getElementById('app'));
+render(<Counter />, document.querySelector('#app')!);
 ```
 
 ## API
@@ -103,7 +101,6 @@ render(<Counter />, document.getElementById('app'));
 - `component(displayName, init: props => () => vnode): ComponentClass`
 - `component(displayName): (render: props => vnode) => ComponentClass`
 - `component(displayName): (init: props => () => vnode) => ComponentClass`
-- `preset(props, defaultProps or getDefaultProps)`
 
 ### Utility functions
 
@@ -111,13 +108,14 @@ render(<Counter />, document.getElementById('app'));
 
 ### Extensions
 
-- `stateVal(initialValue)`
-- `stateObj(initialValues)`
+- `atom(initialValue)`
+- `state(initialValues)`
 - `createMemo(calculation, getDependencies)`
 - `consume(context)`
 - `effect(action, getDependencies? | null)`
 - `interval(action, milliseconds)`
 - `handlePromise(getPromise)`
+- `preset(props, defaultProps or getDefaultProps)`
 
 ## Project state
 

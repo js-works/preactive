@@ -165,8 +165,6 @@ class BaseComponent<P extends Props> extends PreactComponent<
   #propsObj: any;
   #render: null | (() => VNode) = null;
   #isFactoryFunction: boolean | undefined = undefined;
-  #usesHooks = false;
-  #usesExtensions = false;
 
   #update = (force?: boolean) => {
     if (force) {
@@ -227,18 +225,7 @@ class BaseComponent<P extends Props> extends PreactComponent<
     let content: any;
 
     if (this.#isFactoryFunction === undefined) {
-      const getCtrl: ComponentCtrlGetter = (intention) => {
-        this.#usesExtensions ||= intention === 2;
-        this.#usesHooks ||= intention === 1;
-
-        if (this.#usesHooks && this.#usesExtensions) {
-          throw (
-            `Component "${getComponentName(
-              this.constructor
-            )}" illegally uses hooks and ` + 'extensions at the same time'
-          );
-        }
-
+      const getCtrl: ComponentCtrlGetter = () => {
         return this.#ctrl;
       };
 
@@ -247,24 +234,9 @@ class BaseComponent<P extends Props> extends PreactComponent<
           const result = this.#main(this.#propsObj);
 
           if (typeof result === 'function') {
-            if (this.#usesHooks) {
-              throw new Error(
-                `Component "${getComponentName(this.constructor)}" ` +
-                  'uses hooks but returns a render function - this is ' +
-                  'not allowed'
-              );
-            }
-
             this.#isFactoryFunction = true;
             this.#render = result;
           } else {
-            if (this.#usesExtensions) {
-              throw new Error(
-                `Component "${getComponentName(component)}" uses extensions ` +
-                  'but does not return a render function - this is not allowed'
-              );
-            }
-
             this.#isFactoryFunction = false;
             content = result ?? null;
           }

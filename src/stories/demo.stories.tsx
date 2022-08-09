@@ -1,20 +1,17 @@
 /** @jsx h */
 import { ReactiveControllerHost } from 'lit';
-import { makeAutoObservable } from 'mobx';
-import { makeComponentsMobxAware } from 'preactive/mobx-tools';
 import { h, createContext, createRef, RefObject } from 'preact';
 import { component, PropsOf } from 'preactive';
-import { useEffect, useState } from 'preactive/hooks';
 
 import {
+  atom,
   consume,
   create,
   createMemo,
   createTicker,
   effect,
   getRefresher,
-  stateVal,
-  stateObj,
+  state,
   interval,
   handleMethods,
   handlePromise,
@@ -26,7 +23,6 @@ export default {
 };
 
 export const simpleCounterDemo = () => <SimpleCounterDemo />;
-export const simpleCounterDemo2 = () => <SimpleCounterDemo2 />;
 export const complexCounterDemo = () => <ComplexCounterDemo />;
 export const clockDemo = () => <ClockDemo />;
 export const memoDemo = () => <MemoDemo />;
@@ -34,20 +30,6 @@ export const intervalDemo = () => <IntervalDemo />;
 export const contextDemo = () => <ContextDemo />;
 export const mousePositionDemo = () => <MousePositionDemo />;
 export const promiseDemo = () => <PromiseDemo />;
-export const mobxDemo = () => <MobxDemo />;
-
-// Auto-updating mobx store
-
-const store = makeAutoObservable({
-  count: 0,
-
-  increment() {
-    this.count++;
-  }
-});
-
-makeComponentsMobxAware();
-setInterval(() => store.increment(), 1000);
 
 // === Simple counter demo ===========================================
 
@@ -55,51 +37,28 @@ const SimpleCounterDemo = component('SimpleCounterDemo')<{
   initialCount?: number;
   label?: string;
 }>((p) => {
-  const props = preset(p, () => ({
+  preset(p, () => ({
     initialCount: 0,
     label: 'Counter'
   }));
 
-  const [getCount, setCount] = stateVal(props.initialCount);
-  const onIncrement = () => setCount((it) => it + 1);
-  const onInput = (ev: any) => setCount(ev.currentTarget.valueAsNumber); // TODO
+  const [s, set] = state({ count: p.initialCount });
+  const onIncrement = () => set.count((it) => it + 1);
+  const onInput = (ev: any) => set.count(ev.currentTarget.valueAsNumber); // TODO
 
   effect(
     () => {
-      console.log(`Value of "${props.label}": ${getCount()}`);
+      console.log(`Value of "${p.label}": ${s.count}`);
     },
-    () => [getCount()]
+    () => [s.count]
   );
 
   return () => (
     <div>
       <h3>Simple counter demo:</h3>
-      <label>{props.label}: </label>
-      <input type="number" value={getCount()} onInput={onInput} />
-      <button onClick={onIncrement}>{getCount()}</button>
-    </div>
-  );
-});
-
-// === Simple counter demo 2 =========================================
-
-const SimpleCounterDemo2 = component('SimpleCounterDemo2')<{
-  initialCount?: number;
-  label?: string;
-}>(({ initialCount = 0, label = 'Counter' }) => {
-  const [count, setCount] = useState(initialCount);
-  const onIncrement = () => setCount((it) => it + 1);
-
-  useEffect(() => {
-    console.log(`Value of "${label}": ${count}`);
-  }, [label, count]);
-
-  return (
-    <div>
-      <h3>Simple counter demo 2:</h3>
-      <button onClick={onIncrement}>
-        {label}: {count}
-      </button>
+      <label>{p.label}: </label>
+      <input type="number" value={s.count} onInput={onInput} />
+      <button onClick={onIncrement}>{s.count}</button>
     </div>
   );
 });
@@ -114,27 +73,27 @@ const ComplexCounter = component('ComplexCounter')<{
     reset(n: number): void;
   }>;
 }>((p) => {
-  const props = preset(p, {
+  preset(p, {
     initialCount: 0,
     label: 'Counter'
   });
 
-  const [getCount, setCount] = stateVal(props.initialCount);
-  const onIncrement = () => setCount((it) => it + 1);
-  const onDecrement = () => setCount((it) => it - 1);
+  const [s, set] = state({ count: p.initialCount });
+  const onIncrement = () => set.count((it) => it + 1);
+  const onDecrement = () => set.count((it) => it - 1);
 
-  handleMethods(() => props.componentRef, {
+  handleMethods(() => p.componentRef, {
     reset(n) {
-      setCount(n);
+      set.count(n);
     }
   });
 
   return () => (
     <div>
       <h3>Complex counter demo:</h3>
-      <label>{props.label}: </label>
+      <label>{p.label}: </label>
       <button onClick={onDecrement}>-</button>
-      {` ${getCount()} `}
+      {` ${s.count} `}
       <button onClick={onIncrement}>+</button>
     </div>
   );
@@ -173,13 +132,13 @@ const ClockDemo = component('ClockDemo', () => {
 // === Memo demo =====================================================
 
 const MemoDemo = component('MemoDemo', () => {
-  const [state, set] = stateObj({ count: 0 });
+  const [s, set] = state({ count: 0 });
   const onButtonClick = () => set.count((it) => it + 1);
   const memo = createMemo(
     () =>
       'Last time the memoized value was calculated: ' +
       new Date().toLocaleTimeString(),
-    () => [Math.floor(state.count / 5)]
+    () => [Math.floor(s.count / 5)]
   );
 
   return () => (
@@ -198,7 +157,7 @@ const MemoDemo = component('MemoDemo', () => {
 // === Interval demo =================================================
 
 const IntervalDemo = component('IntervalDemo', () => {
-  const [state, set] = stateObj({
+  const [s, set] = state({
     count: 0,
     delay: 1000
   });
@@ -207,11 +166,11 @@ const IntervalDemo = component('IntervalDemo', () => {
 
   interval(
     () => set.count((it) => it + 1),
-    () => state.delay
+    () => s.delay
   );
 
   interval(() => {
-    if (state.delay > 10) {
+    if (s.delay > 10) {
       set.delay((it) => (it /= 2));
     }
   }, 1000);
@@ -219,8 +178,8 @@ const IntervalDemo = component('IntervalDemo', () => {
   return () => (
     <div>
       <h3>Interval demo:</h3>
-      <div>Counter: {state.count}</div>
-      <div>Delay: {state.delay}</div>
+      <div>Counter: {s.count}</div>
+      <div>Delay: {s.delay}</div>
       <br />
       <button onClick={onReset}>Reset delay</button>
     </div>
@@ -244,7 +203,7 @@ const translations = {
 const LocaleCtx = createContext('en');
 
 const ContextDemo = component('ContextDemo', () => {
-  const [getLocale, setLocale] = stateVal('en');
+  const [getLocale, setLocale] = atom('en');
   const onLocaleChange = (ev: any) => setLocale(ev.target.value);
 
   return () => (
@@ -269,12 +228,12 @@ const ContextDemo = component('ContextDemo', () => {
 
 const LocaleText = component<{
   id: string;
-}>('LocaleText', (props) => {
+}>('LocaleText', (p) => {
   const getLocale = consume(LocaleCtx);
 
   return () => (
     <p>
-      {(translations as any)[getLocale()][props.id]} {/* // TODO */}
+      {(translations as any)[getLocale()][p.id]} {/* // TODO */}
     </p>
   );
 });
@@ -335,19 +294,19 @@ const MousePositionDemo = component('MousePositionDemo', () => {
 const Loader = component('Loader')<{
   loadingText?: string;
   finishText?: string;
-}>((props) => {
+}>((p) => {
   const res = handlePromise(() => wait(4000));
 
   return () =>
     res.state === 'pending' ? (
-      <div>{props.loadingText}</div>
+      <div>{p.loadingText}</div>
     ) : (
-      <div>{props.finishText}</div>
+      <div>{p.finishText}</div>
     );
 });
 
 const PromiseDemo = component('PromiseDemo', () => {
-  const [state, set] = stateObj({
+  const [s, set] = state({
     key: 0,
     loadingText: 'Loading...',
     finishText: 'Finished!'
@@ -370,9 +329,9 @@ const PromiseDemo = component('PromiseDemo', () => {
       <h3>Promise demo (last update {new Date().toLocaleTimeString()})</h3>
       <section>
         <Loader
-          key={state.key}
-          loadingText={state.loadingText}
-          finishText={state.finishText}
+          key={s.key}
+          loadingText={s.loadingText}
+          finishText={s.finishText}
         />
       </section>
       <br />
@@ -380,33 +339,6 @@ const PromiseDemo = component('PromiseDemo', () => {
       <button onClick={onRestart}>Restart</button>
       <button onClick={onToggleLoadingText}>Toggle loading text</button>
       <button onClick={onToggleFinishText}>Toggle finish text</button>
-    </div>
-  );
-});
-
-const MobxCounterInfo1 = component('MobxCounterInfo1', () => {
-  return (
-    <div>
-      <h3>Mobx counter info 1</h3>
-      Count: {store.count}
-    </div>
-  );
-});
-
-const MobxCounterInfo2 = component('MobxCounterInfo2', () => {
-  return (
-    <div>
-      <h3>Mobx counter info 2</h3>
-      Count: {store.count}
-    </div>
-  );
-});
-
-const MobxDemo = component('MobxDemo', () => {
-  return (
-    <div>
-      <MobxCounterInfo1 />
-      <MobxCounterInfo2 />
     </div>
   );
 });
