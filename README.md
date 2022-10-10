@@ -42,10 +42,10 @@ const Counter = component('Counter')<{
   initialCount?: number;
   label?: string;
 }>((p) => {
-  preset(p, () => ({
+  preset(p, {
     initialCount: 0,
     label: 'Counter'
-  }));
+  });
 
   const [s, set] = state({ count: p.initialCount });
   const increment = () => set.count((it) => it + 1);
@@ -73,10 +73,10 @@ const Counter = component('Counter')<{
   initialCount?: number;
   label?: string;
 }>((p) => {
-  preset(p, () => ({
+  preset(p, {
     initialCount: 0,
     label: 'Counter'
-  }));
+  });
 
   const [s, set] = state({ count: p.initialCount });
   const increment = () => s.count((it) => it + 1);
